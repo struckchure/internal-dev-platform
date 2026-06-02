@@ -12,3 +12,5 @@ __debug*
 !.env.sample
 
 .infisical.json
+.gocache
+.gomodcache

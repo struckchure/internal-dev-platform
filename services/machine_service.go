@@ -89,7 +89,7 @@ func (m *MachineService) CreateMachineEventHandler(args types.CreateMachineEvent
 		internals.CreateContainerArgs{
 			Replicas: 1,
 			Labels: map[string]string{
-				"formatio-app": strings.ToLower(internals.RandomString(15)),
+				"idp-app": strings.ToLower(internals.RandomString(15)),
 			},
 			Name:   machineName,
 			Image:  machineImage,
