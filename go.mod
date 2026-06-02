@@ -1,6 +1,6 @@
 module github.com/struckchure/idp
 
-go 1.23.0
+go 1.25.1
 
 require (
 	ariga.io/atlas-provider-gorm v0.1.1

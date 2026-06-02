@@ -2,9 +2,21 @@
 
 idp is a Go backend service for managing machines, networks, repository connections, and deployments with authentication and async job processing.
 
+## Architecture and Tooling
+
+- **Dependency Injection:** `go.uber.org/fx` (Uber Fx) is used to wire and manage dependencies/modules across the application lifecycle.
+- **HTTP API:** `gofiber/fiber` powers the REST API and middleware stack.
+- **Database Access:** `prisma-client-go` is used for schema-driven data access and migrations.
+- **Async Processing:** `rabbitmq/amqp091-go` is used for queue-based background tasks.
+- **Caching/State:** `go-redis/redis/v9` is used for Redis integration.
+- **Scheduling:** `robfig/cron/v3` is used for scheduled/background jobs.
+- **API Docs:** `swaggo/swag` is used to generate Swagger/OpenAPI docs.
+- **WebSockets:** native WebSocket communication is handled via `nhooyr.io/websocket`.
+- **Configuration/Secrets:** `spf13/viper` is used for local env loading, with secrets sourced via the project secrets factory (`local` / `aws`).
+
 ## Requirements
 
-- Go `1.22+`
+- Go `1.25.1+`
 - Docker and Docker Compose
 
 ## Environment Setup
@@ -18,7 +30,7 @@ cp .env.sample .env
 2. Fill required values in `.env`:
 
 - `DATABASE_URL`
-- `APP_PORT`
+- `APP_PORT`, `SOCKET_PORT`
 - `JWT_ACCESS_KEY`, `JWT_REFRESH_KEY`
 - `RABBITMQ_URL`
 - `REDIS_URL`
@@ -26,6 +38,7 @@ cp .env.sample .env
 - `DEFAULT_ADMIN_EMAIL`, `DEFAULT_ADMIN_PASS`
 - `K8S_CLUSTER_CONFIG`
 - `INGRESS_ROOT_DOMAIN`
+- optional: `SECRET_FROM` (`local` by default, `aws` to load from AWS Secrets Manager)
 
 ## Running Locally
 
@@ -68,8 +81,8 @@ If you use `task`:
 
 ```bash
 task dev                 # run app
-task db:make-migrations  # create new migration and regenerate client
-task db:apply-migrations # apply migrations
+task db:diff             # create new migration and regenerate client
+task db:migrate          # apply migrations
 task db:generate         # regenerate Prisma client
 task test                # run service tests
 task doc:generate        # regenerate swagger docs
