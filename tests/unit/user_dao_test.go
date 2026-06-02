@@ -9,10 +9,10 @@ package tests
 // 	"github.com/stretchr/testify/assert"
 // 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 
-// 	"pkg.formatio/dao"
-// 	"pkg.formatio/tests/config"
-// 	_ "pkg.formatio/tests/config/init"
-// 	"pkg.formatio/types"
+// 	"github.com/struckchure/idp/dao"
+// 	"github.com/struckchure/idp/tests/config"
+// 	_ "github.com/struckchure/idp/tests/config/init"
+// 	"github.com/struckchure/idp/types"
 // )
 
 // func userDAORunner(t *testing.T, callback interface{}) {

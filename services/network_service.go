@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"strings"
 
-	"pkg.formatio/dao"
-	"pkg.formatio/lib"
-	"pkg.formatio/prisma/db"
-	"pkg.formatio/types"
+	"github.com/struckchure/idp/dao"
+	"github.com/struckchure/idp/internals"
+	"github.com/struckchure/idp/prisma/db"
+	"github.com/struckchure/idp/types"
 )
 
 type INetworkService interface {
@@ -20,10 +20,10 @@ type INetworkService interface {
 }
 
 type NetworkService struct {
-	env lib.Env
+	env internals.Env
 
-	networkManager   lib.INetworkManager
-	containerManager lib.IContainerManager
+	networkManager   internals.INetworkManager
+	containerManager internals.IContainerManager
 
 	networkDAO                 dao.INetworkDao
 	machineService             IMachineService
@@ -36,7 +36,7 @@ type NetworkService struct {
 func (n *NetworkService) ListNetworks(args types.ListNetworksArgs) ([]db.NetworkModel, error) {
 	networks, err := n.networkDAO.ListNetworks(args)
 	if err != nil {
-		return nil, lib.HttpError{
+		return nil, internals.HttpError{
 			Message:    err.Error(),
 			StatusCode: http.StatusBadRequest,
 		}
@@ -49,7 +49,7 @@ func (n *NetworkService) ListNetworks(args types.ListNetworksArgs) ([]db.Network
 func (n *NetworkService) CreateNetwork(args types.CreateNetworkArgs) (*db.NetworkModel, error) {
 	machine, err := n.machineService.GetMachine(types.GetMachineArgs{Id: &args.MachineId})
 	if err != nil {
-		return nil, lib.HttpError{
+		return nil, internals.HttpError{
 			Message:    err.Error(),
 			StatusCode: http.StatusNotFound,
 		}
@@ -63,7 +63,7 @@ func (n *NetworkService) CreateNetwork(args types.CreateNetworkArgs) (*db.Networ
 		ID:           machine.ID,
 		ContainerId:  &containerId,
 		MachineImage: &machineImage,
-		Ports: &[]lib.NetworkPort{
+		Ports: &[]internals.NetworkPort{
 			{
 				Protocol:        args.Protocol,
 				DestinationPort: args.DestinationPort,
@@ -71,31 +71,31 @@ func (n *NetworkService) CreateNetwork(args types.CreateNetworkArgs) (*db.Networ
 		},
 	})
 	if err != nil {
-		return nil, lib.HttpError{
+		return nil, internals.HttpError{
 			Message:    err.Error(),
 			StatusCode: http.StatusBadRequest,
 		}
 	}
 
-	container, err := n.containerManager.GetContainer(lib.GetContainerArgs{DeploymentName: containerId})
+	container, err := n.containerManager.GetContainer(internals.GetContainerArgs{DeploymentName: containerId})
 	if err != nil {
-		return nil, lib.HttpError{
+		return nil, internals.HttpError{
 			Message:    err.Error(),
 			StatusCode: http.StatusBadRequest,
 		}
 	}
 
-	k8sNetwork, err := n.networkManager.CreateNetwork(lib.CreateNetworkArgs{
+	k8sNetwork, err := n.networkManager.CreateNetwork(internals.CreateNetworkArgs{
 		Name:     machineName,
 		Labels:   container.Spec.Template.Labels,
 		HostName: n.generateHostName(machineName),
-		Port: lib.NetworkPort{
+		Port: internals.NetworkPort{
 			Protocol:        args.Protocol,
 			DestinationPort: args.DestinationPort,
 		},
 	})
 	if err != nil {
-		return nil, lib.HttpError{
+		return nil, internals.HttpError{
 			Message:    err.Error(),
 			StatusCode: http.StatusBadRequest,
 		}
@@ -111,7 +111,7 @@ func (n *NetworkService) CreateNetwork(args types.CreateNetworkArgs) (*db.Networ
 		IngressId:       k8sNetwork.IngressID,
 	})
 	if err != nil {
-		return nil, lib.HttpError{
+		return nil, internals.HttpError{
 			Message:    err.Error(),
 			StatusCode: http.StatusBadRequest,
 		}
@@ -125,19 +125,19 @@ func (n *NetworkService) DeleteNetwork(args types.DeleteNetworkArgs) error {
 	// TODO: update to use `GetNetwork` from `NetworkServiceInterface`
 	network, err := n.networkDAO.GetNetwork(types.GetNetworkArgs{Id: &args.Id})
 	if err != nil {
-		return lib.TranslateDAOError(err)
+		return internals.TranslateDAOError(err)
 	}
 
 	err = n.networkDAO.DeleteNetwork(args)
 	if err != nil {
-		return lib.TranslateDAOError(err)
+		return internals.TranslateDAOError(err)
 	}
 
 	serviceId, _ := network.ServiceID()
 	ingressId, _ := network.IngressID()
 
 	// TODO: add k8s error translation
-	err = n.networkManager.DeleteNetwork(lib.DeleteNetworkArgs{
+	err = n.networkManager.DeleteNetwork(internals.DeleteNetworkArgs{
 		ServiceID: serviceId,
 		IngressID: ingressId,
 	})
@@ -150,20 +150,20 @@ func (n *NetworkService) DeleteNetwork(args types.DeleteNetworkArgs) error {
 
 // generateHostName implements NetworkServiceInterface.
 func (n *NetworkService) generateHostName(prefix string) string {
-	subDomain := lib.Slugify(fmt.Sprintf("%s-%s", prefix, lib.RandomString(5)))
+	subDomain := internals.Slugify(fmt.Sprintf("%s-%s", prefix, internals.RandomString(5)))
 	fullDomain := fmt.Sprintf("%s.%s", subDomain, n.env.INGRESS_ROOT_DOMAIN)
 
 	return strings.ToLower(fullDomain)
 }
 
 func NewNetworkService(
-	env lib.Env,
+	env internals.Env,
 
 	machineService IMachineService,
 	networkDAO dao.INetworkDao,
 
-	containerManager lib.IContainerManager,
-	networkManager lib.INetworkManager,
+	containerManager internals.IContainerManager,
+	networkManager internals.INetworkManager,
 	githubService IGithubService,
 	repoConnectionDao dao.IRepoConnectionDao,
 	githubAccountConnectionDao dao.IGithubAccountConnectionDao,

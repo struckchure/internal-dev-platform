@@ -2,7 +2,7 @@ package types
 
 import (
 	storm "github.com/Overal-X/formatio.storm"
-	"pkg.formatio/lib"
+	"github.com/struckchure/idp/internals"
 )
 
 type Repository struct {
@@ -28,7 +28,7 @@ type GithubUser struct {
 }
 
 type ListGithubAccountConnectionsArgs struct {
-	lib.BaseListFilterArgs
+	internals.BaseListFilterArgs
 
 	UserId         *string `swaggerignore:"true"`
 	InstallationId *int

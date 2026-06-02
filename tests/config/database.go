@@ -12,18 +12,18 @@ import (
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
 
-	"pkg.formatio/lib"
-	"pkg.formatio/prisma/db"
+	"github.com/struckchure/idp/internals"
+	"github.com/struckchure/idp/prisma/db"
 )
 
-func NewTestDatabase(ctx context.Context, env lib.Env) *postgres.PostgresContainer {
+func NewTestDatabase(ctx context.Context, env internals.Env) *postgres.PostgresContainer {
 	testcontainers.Logger = log.New(&ioutils.NopWriter{}, "", 0)
 
 	container, err := postgres.RunContainer(ctx,
 		testcontainers.WithImage("docker.io/postgres:15-alpine"),
-		postgres.WithDatabase(env.PG_DB),
-		postgres.WithUsername(env.PG_USER),
-		postgres.WithPassword(env.PG_PASSWORD),
+		postgres.WithDatabase("test_db"),
+		postgres.WithUsername("test_user"),
+		postgres.WithPassword("test_password"),
 		testcontainers.WithWaitStrategy(
 			// wait.ForExposedPort().
 			// 	WithStartupTimeout(time.Second*10),
@@ -40,7 +40,7 @@ func NewTestDatabase(ctx context.Context, env lib.Env) *postgres.PostgresContain
 	return container
 }
 
-func NewTestDatabaseConnection(ctx context.Context, env lib.Env, container *postgres.PostgresContainer) *lib.DatabaseConnection {
+func NewTestDatabaseConnection(ctx context.Context, env internals.Env, container *postgres.PostgresContainer) *internals.DatabaseConnection {
 	dsn, _ := container.ConnectionString(ctx, "sslmode=disable")
 
 	client := db.NewClient(db.WithDatasourceURL(dsn))
@@ -48,7 +48,7 @@ func NewTestDatabaseConnection(ctx context.Context, env lib.Env, container *post
 		log.Println("[NewTestDatabaseConnection]: ", err)
 	}
 
-	return &lib.DatabaseConnection{Client: client}
+	return &internals.DatabaseConnection{Client: client}
 }
 
 func MigrateDb(dsn string) {

@@ -3,9 +3,9 @@ package handlers
 import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/samber/lo"
-	"pkg.formatio/lib"
-	"pkg.formatio/services"
-	"pkg.formatio/types"
+	"github.com/struckchure/idp/internals"
+	"github.com/struckchure/idp/services"
+	"github.com/struckchure/idp/types"
 )
 
 type INetworkHandler interface {
@@ -36,7 +36,7 @@ func (n *NetworkHandler) ListNetworks(c fiber.Ctx) error {
 
 	networks, err := n.networkService.ListNetworks(args)
 	if err != nil {
-		return lib.TranslateHandlerError(c, err)
+		return internals.TranslateHandlerError(c, err)
 	}
 
 	return c.Status(fiber.StatusOK).JSON(networks)
@@ -60,7 +60,7 @@ func (n *NetworkHandler) CreateNetwork(c fiber.Ctx) error {
 
 	network, err := n.networkService.CreateNetwork(args)
 	if err != nil {
-		return lib.TranslateHandlerError(c, err)
+		return internals.TranslateHandlerError(c, err)
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(network)
@@ -80,7 +80,7 @@ func (n *NetworkHandler) DeleteNetwork(c fiber.Ctx) error {
 
 	err := n.networkService.DeleteNetwork(types.DeleteNetworkArgs{Id: networkId})
 	if err != nil {
-		return lib.TranslateHandlerError(c, err)
+		return internals.TranslateHandlerError(c, err)
 	}
 
 	return c.Status(fiber.StatusNoContent).JSON(nil)

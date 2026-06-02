@@ -4,16 +4,16 @@ import (
 	"log"
 
 	"github.com/samber/lo"
-	"pkg.formatio/dao"
-	"pkg.formatio/lib"
-	"pkg.formatio/services"
-	"pkg.formatio/types"
+	"github.com/struckchure/idp/dao"
+	"github.com/struckchure/idp/internals"
+	"github.com/struckchure/idp/services"
+	"github.com/struckchure/idp/types"
 )
 
 // The function `UserSeed` registers a new user with default admin credentials and updates their roles
 // to include the "ADMIN" role.
 func UserSeed(
-	env lib.Env,
+	env internals.Env,
 	userService services.IUserService,
 	userDao dao.IUserDao,
 ) {
@@ -27,7 +27,7 @@ func UserSeed(
 		log.Printf("could not plant seeds :( ... %s", err)
 	}
 
-	hasher := lib.NewHasher()
+	hasher := internals.NewHasher()
 	if user != nil {
 		log.Println("watering seeds ... :)")
 		userDao.UpdateUser(types.UpdateUserArgs{

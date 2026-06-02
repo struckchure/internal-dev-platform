@@ -1,9 +1,9 @@
 package types
 
-import "pkg.formatio/lib"
+import "github.com/struckchure/idp/internals"
 
 type ListNetworksArgs struct {
-	lib.BaseListFilterArgs
+	internals.BaseListFilterArgs
 
 	MachineId *string `json:"machineId,omitempty" swag-validate:"optional"`
 	OwnerId   *string `json:"ownerId,omitempty" swag-validate:"optional" swaggerignore:"true"`

@@ -10,8 +10,8 @@ const docTemplate = `{
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
         "contact": {
-            "name": "Formatio Team",
-            "email": "formatio@overal-x.org"
+            "name": "idp Team",
+            "email": "idp@overal-x.org"
         },
         "version": "{{.Version}}"
     },
@@ -117,285 +117,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/social-connection/": {
-            "post": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "operationId": "authSocialConnection",
-                "parameters": [
-                    {
-                        "description": "Auth0 User",
-                        "name": "args",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/types.Auth0UserArgs"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/types.LoginUserResult"
-                        }
-                    }
-                }
-            }
-        },
-        "/billing/cards": {
-            "get": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "billing"
-                ],
-                "operationId": "listCards",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "name": "search",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "name": "skip",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "sortBy",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "name": "take",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/db.CardModel"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/billing/cards/authorize": {
-            "post": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "billing"
-                ],
-                "operationId": "authorizeCard",
-                "parameters": [
-                    {
-                        "description": "Update Repo Connection",
-                        "name": "args",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/types.AuthorizeCardArgs"
-                        }
-                    }
-                ],
-                "responses": {
-                    "202": {
-                        "description": "Accepted",
-                        "schema": {
-                            "$ref": "#/definitions/db.CardModel"
-                        }
-                    }
-                }
-            }
-        },
-        "/billing/cards/pre-authorize": {
-            "post": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "billing"
-                ],
-                "operationId": "preAuthorizeCard",
-                "parameters": [
-                    {
-                        "description": "Pre-Authorize Card",
-                        "name": "args",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/types.PreAuthorizeCardArgs"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/types.PreAuthorizeCardResult"
-                        }
-                    }
-                }
-            }
-        },
-        "/billing/cards/{cardId}": {
-            "delete": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "billing"
-                ],
-                "operationId": "deleteCard",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Card Id",
-                        "name": "cardId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content"
-                    }
-                }
-            },
-            "patch": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "billing"
-                ],
-                "operationId": "UpdateCard",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Card Id",
-                        "name": "cardId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Update Card",
-                        "name": "args",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/types.UpdateCardArgs"
-                        }
-                    }
-                ],
-                "responses": {
-                    "202": {
-                        "description": "Accepted",
-                        "schema": {
-                            "$ref": "#/definitions/db.CardModel"
-                        }
-                    }
-                }
-            }
-        },
-        "/billing/invoice": {
-            "get": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "billing"
-                ],
-                "operationId": "listInvoice",
-                "parameters": [
-                    {
-                        "description": "List Invoice",
-                        "name": "args",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/types.ListInvoiceArgs"
-                        }
-                    }
-                ],
-                "responses": {
-                    "202": {
-                        "description": "Accepted",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/db.InvoiceModel"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/billing/invoice/{invoiceId}": {
-            "get": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "billing"
-                ],
-                "operationId": "getInvoice",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Invoice Id",
-                        "name": "invoiceId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/db.InvoiceModel"
-                        }
-                    }
-                }
-            }
-        },
         "/deployments": {
             "get": {
                 "consumes": [
@@ -424,27 +145,32 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "name": "repoConnectionId",
-                        "in": "query"
+                        "in": "query",
+                        "required": true
                     },
                     {
                         "type": "string",
                         "name": "search",
-                        "in": "query"
+                        "in": "query",
+                        "required": true
                     },
                     {
                         "type": "integer",
                         "name": "skip",
-                        "in": "query"
+                        "in": "query",
+                        "required": true
                     },
                     {
                         "type": "string",
                         "name": "sortBy",
-                        "in": "query"
+                        "in": "query",
+                        "required": true
                     },
                     {
                         "type": "integer",
                         "name": "take",
-                        "in": "query"
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -687,27 +413,32 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "name": "search",
-                        "in": "query"
+                        "in": "query",
+                        "required": true
                     },
                     {
                         "type": "integer",
                         "name": "skip",
-                        "in": "query"
+                        "in": "query",
+                        "required": true
                     },
                     {
                         "type": "string",
                         "name": "sortBy",
-                        "in": "query"
+                        "in": "query",
+                        "required": true
                     },
                     {
                         "type": "integer",
                         "name": "take",
-                        "in": "query"
+                        "in": "query",
+                        "required": true
                     },
                     {
                         "type": "string",
                         "name": "userId",
-                        "in": "query"
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -867,22 +598,26 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "name": "search",
-                        "in": "query"
+                        "in": "query",
+                        "required": true
                     },
                     {
                         "type": "integer",
                         "name": "skip",
-                        "in": "query"
+                        "in": "query",
+                        "required": true
                     },
                     {
                         "type": "string",
                         "name": "sortBy",
-                        "in": "query"
+                        "in": "query",
+                        "required": true
                     },
                     {
                         "type": "integer",
                         "name": "take",
-                        "in": "query"
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -957,179 +692,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/plans": {
-            "get": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "plans"
-                ],
-                "operationId": "listMachinePlans",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "name": "search",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "name": "skip",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "sortBy",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "name": "take",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/db.MachinePlanModel"
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "plans"
-                ],
-                "operationId": "createMachinePlan",
-                "parameters": [
-                    {
-                        "description": "Create Machine Plan",
-                        "name": "args",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/types.CreateMachinePlanArgs"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/db.MachinePlanModel"
-                        }
-                    }
-                }
-            }
-        },
-        "/plans/{machinePlanId}": {
-            "get": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "plans"
-                ],
-                "operationId": "getMachinePlan",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Machine Plan Id",
-                        "name": "machinePlanId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/db.MachinePlanModel"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "plans"
-                ],
-                "operationId": "deleteMachinePlan",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Machine Plan Id",
-                        "name": "machinePlanId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content"
-                    }
-                }
-            },
-            "patch": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "plans"
-                ],
-                "operationId": "updateMachinePlan",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Machine Plan Id",
-                        "name": "machinePlanId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Update Machine",
-                        "name": "args",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/types.UpdateMachinePlanArgs"
-                        }
-                    }
-                ],
-                "responses": {
-                    "202": {
-                        "description": "Accepted",
-                        "schema": {
-                            "$ref": "#/definitions/db.MachinePlanModel"
-                        }
-                    }
-                }
-            }
-        },
         "/repo-connection": {
             "get": {
                 "consumes": [
@@ -1151,22 +713,26 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "name": "search",
-                        "in": "query"
+                        "in": "query",
+                        "required": true
                     },
                     {
                         "type": "integer",
                         "name": "skip",
-                        "in": "query"
+                        "in": "query",
+                        "required": true
                     },
                     {
                         "type": "string",
                         "name": "sortBy",
-                        "in": "query"
+                        "in": "query",
+                        "required": true
                     },
                     {
                         "type": "integer",
                         "name": "take",
-                        "in": "query"
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -1363,84 +929,12 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "db.CardModel": {
-            "type": "object",
-            "required": [
-                "authToken",
-                "cardType",
-                "createdAt",
-                "deletedAt",
-                "expiryMonth",
-                "expiryYear",
-                "id",
-                "isApproved",
-                "isDefault",
-                "lastDigits",
-                "updatedAt",
-                "user",
-                "userId"
-            ],
-            "properties": {
-                "authToken": {
-                    "type": "string"
-                },
-                "cardType": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "deletedAt": {
-                    "type": "string"
-                },
-                "expiryMonth": {
-                    "type": "string"
-                },
-                "expiryYear": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "isApproved": {
-                    "type": "boolean"
-                },
-                "isDefault": {
-                    "type": "boolean"
-                },
-                "lastDigits": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "user": {
-                    "$ref": "#/definitions/db.UserModel"
-                },
-                "userId": {
-                    "type": "string"
-                }
-            }
-        },
-        "db.Currency": {
-            "type": "string",
-            "enum": [
-                "NGN"
-            ],
-            "x-enum-varnames": [
-                "CurrencyNgn"
-            ]
-        },
         "db.DeploymentLogModel": {
             "type": "object",
             "required": [
                 "createdAt",
-                "deletedAt",
-                "deployment",
                 "deploymentId",
                 "id",
-                "jobId",
-                "message",
                 "updatedAt"
             ],
             "properties": {
@@ -1473,16 +967,9 @@ const docTemplate = `{
         "db.DeploymentModel": {
             "type": "object",
             "required": [
-                "DeploymentLog",
-                "actor",
-                "commitHash",
-                "commitMessage",
                 "createdAt",
-                "deletedAt",
                 "id",
-                "machine",
                 "machineId",
-                "repoConnection",
                 "repoConnectionId",
                 "status",
                 "updatedAt"
@@ -1551,14 +1038,8 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "createdAt",
-                "deletedAt",
-                "githubEmail",
-                "githubId",
-                "githubInstallationId",
-                "githubUsername",
                 "id",
                 "updatedAt",
-                "user",
                 "userId"
             ],
             "properties": {
@@ -1594,105 +1075,13 @@ const docTemplate = `{
                 }
             }
         },
-        "db.InvoiceModel": {
-            "type": "object",
-            "required": [
-                "createdAt",
-                "currency",
-                "deletedAt",
-                "description",
-                "from",
-                "id",
-                "productId",
-                "quantity",
-                "reference",
-                "status",
-                "to",
-                "totalPrice",
-                "unitPrice",
-                "updatedAt",
-                "user",
-                "userId"
-            ],
-            "properties": {
-                "createdAt": {
-                    "type": "string"
-                },
-                "currency": {
-                    "$ref": "#/definitions/db.Currency"
-                },
-                "deletedAt": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "from": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "productId": {
-                    "type": "string"
-                },
-                "quantity": {
-                    "type": "integer"
-                },
-                "reference": {
-                    "type": "string"
-                },
-                "status": {
-                    "$ref": "#/definitions/db.InvoiceStatus"
-                },
-                "to": {
-                    "type": "string"
-                },
-                "totalPrice": {
-                    "type": "number"
-                },
-                "unitPrice": {
-                    "type": "number"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "user": {
-                    "$ref": "#/definitions/db.UserModel"
-                },
-                "userId": {
-                    "type": "string"
-                }
-            }
-        },
-        "db.InvoiceStatus": {
-            "type": "string",
-            "enum": [
-                "PAID",
-                "UNPAID"
-            ],
-            "x-enum-varnames": [
-                "InvoiceStatusPaid",
-                "InvoiceStatusUnpaid"
-            ]
-        },
         "db.MachineModel": {
             "type": "object",
             "required": [
-                "Deployment",
-                "Network",
-                "RepoConnection",
-                "containerId",
                 "createdAt",
-                "deletedAt",
                 "id",
-                "machineImage",
-                "machineName",
                 "machineStatus",
-                "owner",
                 "ownerId",
-                "plan",
-                "planId",
                 "updatedAt"
             ],
             "properties": {
@@ -1717,6 +1106,9 @@ const docTemplate = `{
                 "containerId": {
                     "type": "string"
                 },
+                "cpu": {
+                    "type": "string"
+                },
                 "createdAt": {
                     "type": "string"
                 },
@@ -1735,70 +1127,13 @@ const docTemplate = `{
                 "machineStatus": {
                     "$ref": "#/definitions/db.MachineStatus"
                 },
+                "memory": {
+                    "type": "string"
+                },
                 "owner": {
                     "$ref": "#/definitions/db.UserModel"
                 },
                 "ownerId": {
-                    "type": "string"
-                },
-                "plan": {
-                    "$ref": "#/definitions/db.MachinePlanModel"
-                },
-                "planId": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "db.MachinePlanModel": {
-            "type": "object",
-            "required": [
-                "Machine",
-                "cpu",
-                "createdAt",
-                "currency",
-                "deletedAt",
-                "hourlyRate",
-                "id",
-                "memory",
-                "monthlyRate",
-                "name",
-                "updatedAt"
-            ],
-            "properties": {
-                "Machine": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/db.MachineModel"
-                    }
-                },
-                "cpu": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "currency": {
-                    "$ref": "#/definitions/db.Currency"
-                },
-                "deletedAt": {
-                    "type": "string"
-                },
-                "hourlyRate": {
-                    "type": "number"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "memory": {
-                    "type": "string"
-                },
-                "monthlyRate": {
-                    "type": "number"
-                },
-                "name": {
                     "type": "string"
                 },
                 "updatedAt": {
@@ -1827,16 +1162,10 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "createdAt",
-                "deletedAt",
                 "destinationPort",
-                "hostName",
                 "id",
-                "ingressId",
                 "listeningPort",
-                "machine",
                 "machineId",
-                "protocol",
-                "serviceId",
                 "updatedAt"
             ],
             "properties": {
@@ -1881,14 +1210,9 @@ const docTemplate = `{
         "db.RepoConnectionModel": {
             "type": "object",
             "required": [
-                "Deployment",
                 "createdAt",
-                "deletedAt",
                 "id",
-                "machine",
                 "machineId",
-                "repoId",
-                "repoName",
                 "updatedAt"
             ],
             "properties": {
@@ -1924,178 +1248,25 @@ const docTemplate = `{
                 }
             }
         },
-        "db.SocialConnectionModel": {
-            "type": "object",
-            "required": [
-                "connectionId",
-                "connectionType",
-                "createdAt",
-                "deletedAt",
-                "id",
-                "updatedAt",
-                "user",
-                "userId"
-            ],
-            "properties": {
-                "connectionId": {
-                    "type": "string"
-                },
-                "connectionType": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "deletedAt": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "user": {
-                    "$ref": "#/definitions/db.UserModel"
-                },
-                "userId": {
-                    "type": "string"
-                }
-            }
-        },
-        "db.TransactionModel": {
-            "type": "object",
-            "required": [
-                "amount",
-                "createdAt",
-                "currency",
-                "deletedAt",
-                "description",
-                "id",
-                "reference",
-                "status",
-                "type",
-                "updatedAt",
-                "user",
-                "userId"
-            ],
-            "properties": {
-                "amount": {
-                    "type": "number"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "currency": {
-                    "$ref": "#/definitions/db.Currency"
-                },
-                "deletedAt": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "reference": {
-                    "type": "string"
-                },
-                "status": {
-                    "$ref": "#/definitions/db.TransactionStatus"
-                },
-                "type": {
-                    "$ref": "#/definitions/db.TransactionType"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "user": {
-                    "$ref": "#/definitions/db.UserModel"
-                },
-                "userId": {
-                    "type": "string"
-                }
-            }
-        },
-        "db.TransactionStatus": {
-            "type": "string",
-            "enum": [
-                "PENDING",
-                "SUCCESS",
-                "FAILED"
-            ],
-            "x-enum-varnames": [
-                "TransactionStatusPending",
-                "TransactionStatusSuccess",
-                "TransactionStatusFailed"
-            ]
-        },
-        "db.TransactionType": {
-            "type": "string",
-            "enum": [
-                "DEBIT",
-                "CREDIT"
-            ],
-            "x-enum-varnames": [
-                "TransactionTypeDebit",
-                "TransactionTypeCredit"
-            ]
-        },
         "db.UserModel": {
             "type": "object",
             "required": [
-                "Card",
-                "GithubAccountConnection",
-                "Invoice",
-                "Machine",
-                "SocialConnection",
-                "Transaction",
                 "createdAt",
-                "deletedAt",
-                "email",
-                "firstName",
                 "id",
-                "lastName",
-                "password",
                 "roles",
                 "updatedAt"
             ],
             "properties": {
-                "Card": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/db.CardModel"
-                    }
-                },
                 "GithubAccountConnection": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/db.GithubAccountConnectionModel"
                     }
                 },
-                "Invoice": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/db.InvoiceModel"
-                    }
-                },
                 "Machine": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/db.MachineModel"
-                    }
-                },
-                "SocialConnection": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/db.SocialConnectionModel"
-                    }
-                },
-                "Transaction": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/db.TransactionModel"
                     }
                 },
                 "createdAt": {
@@ -2141,7 +1312,7 @@ const docTemplate = `{
                 }
             }
         },
-        "lib.AuthTokens": {
+        "internals.AuthTokens": {
             "type": "object",
             "required": [
                 "accessToken",
@@ -2171,74 +1342,25 @@ const docTemplate = `{
                 }
             }
         },
-        "types.Auth0UserArgs": {
-            "type": "object",
-            "required": [
-                "token"
-            ],
-            "properties": {
-                "token": {
-                    "type": "string"
-                }
-            }
-        },
-        "types.AuthorizeCardArgs": {
-            "type": "object",
-            "required": [
-                "otp",
-                "reference"
-            ],
-            "properties": {
-                "otp": {
-                    "type": "string"
-                },
-                "reference": {
-                    "type": "string"
-                }
-            }
-        },
         "types.CreateMachineArgs": {
             "type": "object",
             "required": [
+                "cpu",
                 "machineImage",
                 "machineName",
-                "planId"
+                "memory"
             ],
             "properties": {
+                "cpu": {
+                    "type": "string"
+                },
                 "machineImage": {
                     "type": "string"
                 },
                 "machineName": {
                     "type": "string"
                 },
-                "planId": {
-                    "type": "string"
-                }
-            }
-        },
-        "types.CreateMachinePlanArgs": {
-            "type": "object",
-            "required": [
-                "cpu",
-                "currency",
-                "memory",
-                "monthlyRate",
-                "name"
-            ],
-            "properties": {
-                "cpu": {
-                    "type": "string"
-                },
-                "currency": {
-                    "type": "string"
-                },
                 "memory": {
-                    "type": "string"
-                },
-                "monthlyRate": {
-                    "type": "integer"
-                },
-                "name": {
                     "type": "string"
                 }
             }
@@ -2285,26 +1407,6 @@ const docTemplate = `{
                 }
             }
         },
-        "types.ListInvoiceArgs": {
-            "type": "object",
-            "properties": {
-                "search": {
-                    "type": "string"
-                },
-                "skip": {
-                    "type": "integer"
-                },
-                "sortBy": {
-                    "type": "string"
-                },
-                "take": {
-                    "type": "integer"
-                },
-                "userId": {
-                    "type": "string"
-                }
-            }
-        },
         "types.LoginUserArgs": {
             "type": "object",
             "required": [
@@ -2327,45 +1429,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "tokens": {
-                    "$ref": "#/definitions/lib.AuthTokens"
-                }
-            }
-        },
-        "types.PreAuthorizeCardArgs": {
-            "type": "object",
-            "required": [
-                "cardNumber",
-                "cvv",
-                "expiryMonth",
-                "expiryYear",
-                "pin"
-            ],
-            "properties": {
-                "cardNumber": {
-                    "type": "string"
-                },
-                "cvv": {
-                    "type": "string"
-                },
-                "expiryMonth": {
-                    "type": "string"
-                },
-                "expiryYear": {
-                    "type": "string"
-                },
-                "pin": {
-                    "type": "string"
-                }
-            }
-        },
-        "types.PreAuthorizeCardResult": {
-            "type": "object",
-            "required": [
-                "reference"
-            ],
-            "properties": {
-                "reference": {
-                    "type": "string"
+                    "$ref": "#/definitions/internals.AuthTokens"
                 }
             }
         },
@@ -2384,6 +1448,8 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "email",
+                "firstName",
+                "lastName",
                 "password"
             ],
             "properties": {
@@ -2404,58 +1470,23 @@ const docTemplate = `{
         "types.RegisterUserResult": {
             "type": "object",
             "required": [
-                "Card",
-                "GithubAccountConnection",
-                "Invoice",
-                "Machine",
-                "SocialConnection",
-                "Transaction",
                 "createdAt",
-                "deletedAt",
-                "email",
-                "firstName",
                 "id",
-                "lastName",
-                "password",
                 "roles",
                 "tokens",
                 "updatedAt"
             ],
             "properties": {
-                "Card": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/db.CardModel"
-                    }
-                },
                 "GithubAccountConnection": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/db.GithubAccountConnectionModel"
                     }
                 },
-                "Invoice": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/db.InvoiceModel"
-                    }
-                },
                 "Machine": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/db.MachineModel"
-                    }
-                },
-                "SocialConnection": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/db.SocialConnectionModel"
-                    }
-                },
-                "Transaction": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/db.TransactionModel"
                     }
                 },
                 "createdAt": {
@@ -2486,7 +1517,7 @@ const docTemplate = `{
                     }
                 },
                 "tokens": {
-                    "$ref": "#/definitions/lib.AuthTokens"
+                    "$ref": "#/definitions/internals.AuthTokens"
                 },
                 "updatedAt": {
                     "type": "string"
@@ -2520,72 +1551,40 @@ const docTemplate = `{
                 }
             }
         },
-        "types.UpdateCardArgs": {
-            "type": "object",
-            "properties": {
-                "AuthToken": {
-                    "type": "string"
-                },
-                "CardType": {
-                    "type": "string"
-                },
-                "ExpiryMonth": {
-                    "type": "string"
-                },
-                "ExpiryYear": {
-                    "type": "string"
-                },
-                "IsApproved": {
-                    "type": "boolean"
-                },
-                "IsDefault": {
-                    "type": "boolean"
-                },
-                "LastDigits": {
-                    "type": "string"
-                }
-            }
-        },
         "types.UpdateMachineArgs": {
             "type": "object",
+            "required": [
+                "cpu",
+                "machineImage",
+                "machineName",
+                "memory",
+                "ownerId"
+            ],
             "properties": {
+                "cpu": {
+                    "type": "string"
+                },
                 "machineImage": {
                     "type": "string"
                 },
                 "machineName": {
                     "type": "string"
                 },
-                "ownerId": {
-                    "type": "string"
-                },
-                "planId": {
-                    "type": "string"
-                }
-            }
-        },
-        "types.UpdateMachinePlanArgs": {
-            "type": "object",
-            "properties": {
-                "cpu": {
-                    "description": "HourlyRate  *int32  ` + "`" + `json:\"hourlyRate\" swag-validate:\"optional\"` + "`" + `",
-                    "type": "string"
-                },
-                "currency": {
-                    "type": "string"
-                },
                 "memory": {
                     "type": "string"
                 },
-                "monthlyRate": {
-                    "type": "integer"
-                },
-                "name": {
+                "ownerId": {
                     "type": "string"
                 }
             }
         },
         "types.UpdateRepoConnectionArgs": {
             "type": "object",
+            "required": [
+                "machineId",
+                "repoId",
+                "repoName"
+            ],
             "properties": {
                 "machineId": {
                     "type": "string"
@@ -2601,7 +1600,9 @@ const docTemplate = `{
         "types.UpdateUserArgs": {
             "type": "object",
             "required": [
-                "email"
+                "firstName",
+                "lastName",
+                "password"
             ],
             "properties": {
                 "email": {
@@ -2627,7 +1628,7 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "",
 	BasePath:         "",
 	Schemes:          []string{},
-	Title:            "Formatio API",
+	Title:            "idp API",
 	Description:      "",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,

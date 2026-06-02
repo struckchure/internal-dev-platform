@@ -3,7 +3,7 @@ package routers
 import (
 	"github.com/gofiber/fiber/v3"
 
-	"pkg.formatio/handlers"
+	"github.com/struckchure/idp/handlers"
 )
 
 func NewWebhookRouter(app *fiber.App, webhookHandler handlers.IWebhookHandler) {

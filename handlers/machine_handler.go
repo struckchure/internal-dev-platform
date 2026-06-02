@@ -3,9 +3,9 @@ package handlers
 import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/samber/lo"
-	"pkg.formatio/lib"
-	"pkg.formatio/services"
-	"pkg.formatio/types"
+	"github.com/struckchure/idp/internals"
+	"github.com/struckchure/idp/services"
+	"github.com/struckchure/idp/types"
 )
 
 type IMachineHandler interface {
@@ -62,7 +62,7 @@ func (m *MachineHandler) CreateMachine(c fiber.Ctx) error {
 
 	machine, err := m.machineService.CreateMachine(args)
 	if err != nil {
-		return lib.TranslateHandlerError(c, err)
+		return internals.TranslateHandlerError(c, err)
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(machine)
@@ -82,7 +82,7 @@ func (m *MachineHandler) GetMachine(c fiber.Ctx) error {
 	machine, err := m.machineService.GetMachine(types.GetMachineArgs{Id: &machineId})
 
 	if err != nil {
-		return lib.TranslateHandlerError(c, err)
+		return internals.TranslateHandlerError(c, err)
 	}
 
 	return c.Status(fiber.StatusOK).JSON(machine)
@@ -110,7 +110,7 @@ func (m *MachineHandler) UpdateMachine(c fiber.Ctx) error {
 
 	err := m.machineService.UpdateMachine(args)
 	if err != nil {
-		return lib.TranslateHandlerError(c, err)
+		return internals.TranslateHandlerError(c, err)
 	}
 
 	return c.Status(fiber.StatusAccepted).JSON(nil)

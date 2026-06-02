@@ -1,4 +1,4 @@
-name: formatio
+name: idp
 
 services:
   postgres:

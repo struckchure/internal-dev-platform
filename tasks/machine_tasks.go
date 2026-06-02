@@ -5,26 +5,26 @@ import (
 	"errors"
 	"log"
 
+	"github.com/struckchure/idp/dao"
+	"github.com/struckchure/idp/internals"
+	"github.com/struckchure/idp/services"
+	"github.com/struckchure/idp/types"
 	v1 "k8s.io/api/core/v1"
-	"pkg.formatio/dao"
-	"pkg.formatio/lib"
-	"pkg.formatio/services"
-	"pkg.formatio/types"
 )
 
 type MachineTasks struct {
-	rmq                 lib.RabbitMQ
+	rmq                 internals.RabbitMQ
 	machineService      services.IMachineService
-	k8sInformer         lib.IInformer
+	k8sInformer         internals.IInformer
 	k8sInformerChannel  chan struct{}
-	k8sContainerManager lib.IContainerManager
+	k8sContainerManager internals.IContainerManager
 	deploymentService   *services.DeploymentService
 	machineDao          dao.IMachineDao
 	repoConnectionDao   dao.IRepoConnectionDao
 }
 
 func (r *MachineTasks) CreateMachineTask() {
-	r.rmq.Subscribe(lib.SubscribeArgs{
+	r.rmq.Subscribe(internals.SubscribeArgs{
 		Queue: services.CREATE_MACHINE_QUEUE,
 		Callback: func(body string) error {
 			var payload types.CreateMachineEventHandlerArgs
@@ -48,7 +48,7 @@ func (r *MachineTasks) CreateMachineTask() {
 }
 
 func (r *MachineTasks) UpdateMachineTask() {
-	r.rmq.Subscribe(lib.SubscribeArgs{
+	r.rmq.Subscribe(internals.SubscribeArgs{
 		Queue: services.UPDATE_MACHINE_QUEUE,
 		Callback: func(body string) error {
 			var payload types.UpdateMachineArgs
@@ -72,7 +72,7 @@ func (r *MachineTasks) UpdateMachineTask() {
 }
 
 func (r *MachineTasks) DeleteMachineTask() {
-	r.rmq.Subscribe(lib.SubscribeArgs{
+	r.rmq.Subscribe(internals.SubscribeArgs{
 		Queue: services.DELETE_MACHINE_QUEUE,
 		Callback: func(body string) error {
 			var payload struct {
@@ -102,8 +102,8 @@ func (r *MachineTasks) DeleteMachineTask() {
 }
 
 func (r *MachineTasks) RedeployOnMachineUpdateTask() {
-	r.k8sInformer.Pods(v1.NamespaceDefault, func(iet lib.InformerEventType, p ...*v1.Pod) error {
-		if iet == lib.InformerEventCreated {
+	r.k8sInformer.Pods(v1.NamespaceDefault, func(iet internals.InformerEventType, p ...*v1.Pod) error {
+		if iet == internals.InformerEventCreated {
 			pod := p[0]
 			if pod.Status.Phase != v1.PodRunning {
 				return nil
@@ -157,10 +157,10 @@ func (r *MachineTasks) RedeployOnMachineUpdateTask() {
 }
 
 func NewMachineTasks(
-	rmq lib.RabbitMQ,
+	rmq internals.RabbitMQ,
 	machineService services.IMachineService,
-	k8sInformer lib.IInformer,
-	k8sContainerManager lib.IContainerManager,
+	k8sInformer internals.IInformer,
+	k8sContainerManager internals.IContainerManager,
 	deploymentService *services.DeploymentService,
 	machineDao dao.IMachineDao,
 	repoConnectionDao dao.IRepoConnectionDao,

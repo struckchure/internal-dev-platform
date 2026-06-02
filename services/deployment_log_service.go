@@ -1,10 +1,10 @@
 package services
 
 import (
-	"pkg.formatio/dao"
-	"pkg.formatio/lib"
-	"pkg.formatio/prisma/db"
-	"pkg.formatio/types"
+	"github.com/struckchure/idp/dao"
+	"github.com/struckchure/idp/internals"
+	"github.com/struckchure/idp/prisma/db"
+	"github.com/struckchure/idp/types"
 )
 
 type DeploymentLogService struct {
@@ -15,7 +15,7 @@ type DeploymentLogService struct {
 func (s *DeploymentLogService) ListDeploymentLogs(args types.GetDeploymentArgs) ([]db.DeploymentLogModel, error) {
 	deploymentLogs, err := s.deploymentLogDAO.ListLogs(types.ListDeploymentLogArgs{DeploymentId: &args.Id})
 	if err != nil {
-		return nil, lib.TranslateDAOError(err)
+		return nil, internals.TranslateDAOError(err)
 	}
 
 	return deploymentLogs, nil
@@ -29,7 +29,7 @@ func (s *DeploymentLogService) CreateDeploymentLog(args types.CreateDeploymentLo
 		Message:      &args.Message,
 	})
 	if err != nil {
-		return nil, lib.TranslateDAOError(err)
+		return nil, internals.TranslateDAOError(err)
 	}
 
 	if len(logExists) > 0 {

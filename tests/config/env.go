@@ -1,19 +1,12 @@
 package config
 
 import (
-	"pkg.formatio/lib"
+	"github.com/struckchure/idp/internals"
 )
 
-func NewEnv() lib.Env {
-	return lib.Env{
-		DB_SSL_MODE:    "disable",
-		DB_CLIENT_CERT: "DB_CLIENT_CERT",
-
-		PG_HOST:     "localhost",
-		PG_USER:     "test_user",
-		PG_PASSWORD: "test_password",
-		PG_DB:       "test_db",
-		PG_PORT:     "5432",
+func NewEnv() internals.Env {
+	return internals.Env{
+		DATABASE_URL: "postgresql://test_user:test_password@localhost:5432/test_db?sslmode=disable",
 
 		APP_PORT:    "3000",
 		SOCKET_PORT: "9090",
@@ -29,9 +22,6 @@ func NewEnv() lib.Env {
 
 		DEFAULT_ADMIN_EMAIL: "DEFAULT_ADMIN_EMAIL",
 		DEFAULT_ADMIN_PASS:  "DEFAULT_ADMIN_PASS",
-
-		AUTH0_DOMAIN:    "AUTH0_DOMAIN",
-		AUTH0_CLIENT_ID: "AUTH0_CLIENT_ID",
 
 		RABBITMQ_URL: "RABBITMQ_URL",
 

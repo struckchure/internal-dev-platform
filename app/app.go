@@ -7,7 +7,7 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/logger"
 	"github.com/gofiber/fiber/v3/middleware/recover"
 
-	_ "pkg.formatio/docs"
+	_ "github.com/struckchure/idp/docs"
 )
 
 func NewApp() *fiber.App {

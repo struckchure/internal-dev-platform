@@ -7,12 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Currency {
-  NGN @map("NGN")
-
-  @@map("currency")
-}
-
 model User {
   id        String    @id @default(uuid())
   createdAt DateTime  @default(now()) @map("created_at")
@@ -25,33 +19,10 @@ model User {
   password  String?
   roles     String[]
 
-  Card                    Card[]
   GithubAccountConnection GithubAccountConnection[]
-  Invoice                 Invoice[]
   Machine                 Machine[]
-  SocialConnection        SocialConnection[]
-  Transaction             Transaction[]
 
   @@map("users")
-}
-
-model Card {
-  id        String    @id @default(uuid())
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
-  deletedAt DateTime? @default(dbgenerated("null")) @map("deleted_at")
-
-  userId      String  @map("user_id")
-  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  isDefault   Boolean @default(false) @map("is_default")
-  cardType    String? @map("card_type")
-  lastDigits  String? @map("last_digits")
-  authToken   String? @map("auth_token")
-  isApproved  Boolean @default(false) @map("is_approved")
-  expiryMonth String? @map("expiry_month")
-  expiryYear  String? @map("expiry_year")
-
-  @@map("cards")
 }
 
 model DeploymentLog {
@@ -113,53 +84,6 @@ model GithubAccountConnection {
   @@map("github_account_connections")
 }
 
-enum InvoiceStatus {
-  PAID   @map("PAID")
-  UNPAID @map("UNPAID")
-
-  @@map("invoice_status")
-}
-
-model Invoice {
-  id        String    @id @default(uuid())
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
-  deletedAt DateTime? @default(dbgenerated("null")) @map("deleted_at")
-
-  userId      String        @map("user_id")
-  user        User          @relation(fields: [userId], references: [id], onUpdate: NoAction)
-  productId   String?       @map("product_id")
-  reference   String?
-  description String?
-  from        DateTime?     @db.Timestamptz(6)
-  to          DateTime?     @db.Timestamptz(6)
-  quantity    Int?
-  unitPrice   Decimal       @map("unit_price") @db.Money
-  totalPrice  Decimal       @map("total_price") @db.Money
-  currency    Currency      @default(NGN)
-  status      InvoiceStatus @default(UNPAID)
-
-  @@map("invoices")
-}
-
-model MachinePlan {
-  id        String    @id @default(uuid())
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
-  deletedAt DateTime? @default(dbgenerated("null")) @map("deleted_at")
-
-  name        String?  @unique
-  currency    Currency @default(NGN)
-  monthlyRate Decimal? @map("monthly_rate") @db.Money
-  hourlyRate  Decimal? @map("hourly_rate") @db.Money
-  cpu         String
-  memory      String
-
-  Machine Machine[]
-
-  @@map("machine_plans")
-}
-
 enum MachineStatus {
   CREATING      @map("CREATING")
   RUNNING       @map("RUNNING")
@@ -178,11 +102,11 @@ model Machine {
 
   ownerId       String        @map("owner_id")
   owner         User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  planId        String        @map("plan_id")
-  plan          MachinePlan   @relation(fields: [planId], references: [id], onDelete: NoAction, onUpdate: Cascade)
   containerId   String?       @map("container_id")
   machineName   String?       @map("machine_name")
   machineImage  String?       @map("machine_image")
+  cpu           String?
+  memory        String?
   machineStatus MachineStatus @default(CREATING) @map("machine_status")
 
   Deployment     Deployment[]
@@ -225,51 +149,4 @@ model RepoConnection {
   Deployment Deployment[]
 
   @@map("repo_connections")
-}
-
-model SocialConnection {
-  id        String    @id @default(uuid())
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
-  deletedAt DateTime? @default(dbgenerated("null")) @map("deleted_at")
-
-  userId         String  @map("user_id")
-  user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  connectionId   String? @map("connection_id")
-  connectionType String? @map("connection_type")
-
-  @@map("social_connections")
-}
-
-enum TransactionStatus {
-  PENDING @map("PENDING")
-  SUCCESS @map("SUCCESS")
-  FAILED  @map("FAILED")
-
-  @@map("transaction_status")
-}
-
-enum TransactionType {
-  DEBIT  @map("DEBIT")
-  CREDIT @map("CREDIT")
-
-  @@map("transaction_type")
-}
-
-model Transaction {
-  id        String    @id @default(uuid())
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
-  deletedAt DateTime? @default(dbgenerated("null")) @map("deleted_at")
-
-  userId      String            @map("user_id")
-  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  amount      Decimal           @db.Money
-  currency    Currency          @default(NGN)
-  status      TransactionStatus
-  type        TransactionType
-  reference   String            @unique
-  description String?
-
-  @@map("transactions")
 }

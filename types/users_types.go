@@ -1,12 +1,12 @@
 package types
 
 import (
-	"pkg.formatio/lib"
-	"pkg.formatio/prisma/db"
+	"github.com/struckchure/idp/internals"
+	"github.com/struckchure/idp/prisma/db"
 )
 
 type ListUsersArgs struct {
-	lib.BaseListFilterArgs
+	internals.BaseListFilterArgs
 }
 
 type CreateUserArgs struct {
@@ -44,7 +44,7 @@ type RegisterUserArgs struct {
 
 type RegisterUserResult struct {
 	db.UserModel
-	Tokens lib.AuthTokens `json:"tokens"`
+	Tokens internals.AuthTokens `json:"tokens"`
 }
 
 type LoginUserArgs struct {
@@ -53,11 +53,7 @@ type LoginUserArgs struct {
 }
 
 type LoginUserResult struct {
-	Tokens lib.AuthTokens `json:"tokens"`
-}
-
-type Auth0UserArgs struct {
-	Token string `json:"token" validate:"required" `
+	Tokens internals.AuthTokens `json:"tokens"`
 }
 
 type RefreshAccessTokenArgs struct {

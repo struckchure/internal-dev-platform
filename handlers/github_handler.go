@@ -3,9 +3,9 @@ package handlers
 import (
 	"github.com/gofiber/fiber/v3"
 
-	"pkg.formatio/lib"
-	"pkg.formatio/services"
-	"pkg.formatio/types"
+	"github.com/struckchure/idp/internals"
+	"github.com/struckchure/idp/services"
+	"github.com/struckchure/idp/types"
 )
 
 type IGithubHandler interface {
@@ -37,7 +37,7 @@ func (g *GithubHandler) ListRepositories(c fiber.Ctx) error {
 
 	repos, err := g.githubService.ListRepositories(args)
 	if err != nil {
-		return lib.TranslateHandlerError(c, err)
+		return internals.TranslateHandlerError(c, err)
 	}
 
 	return c.Status(fiber.StatusOK).JSON(repos)
@@ -65,7 +65,7 @@ func (g *GithubHandler) AuthorizeGithubAccount(c fiber.Ctx) error {
 
 	link, err := g.githubService.AuthorizeGithubAccount(args)
 	if err != nil {
-		return lib.TranslateHandlerError(c, err)
+		return internals.TranslateHandlerError(c, err)
 	}
 
 	return c.Status(fiber.StatusOK).JSON(RedirectResult{Link: link})
@@ -84,7 +84,7 @@ func (g *GithubHandler) UpdateAppAccess(c fiber.Ctx) error {
 
 	link, err := g.githubService.UpdateAppAccess(args)
 	if err != nil {
-		return lib.TranslateHandlerError(c, err)
+		return internals.TranslateHandlerError(c, err)
 	}
 
 	return c.Status(fiber.StatusOK).JSON(RedirectResult{Link: *link})
@@ -103,7 +103,7 @@ func (g *GithubHandler) ListAccountConnections(c fiber.Ctx) error {
 
 	accountConnections, err := g.githubService.ListAccountConnections(args)
 	if err != nil {
-		return lib.TranslateHandlerError(c, err)
+		return internals.TranslateHandlerError(c, err)
 	}
 
 	return c.Status(fiber.StatusOK).JSON(accountConnections)

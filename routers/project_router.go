@@ -3,8 +3,8 @@ package routers
 import (
 	"github.com/gofiber/fiber/v3"
 
-	"pkg.formatio/handlers"
-	"pkg.formatio/middlewares"
+	"github.com/struckchure/idp/handlers"
+	"github.com/struckchure/idp/middlewares"
 )
 
 func NewProjectRouter(

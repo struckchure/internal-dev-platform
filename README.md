@@ -1,27 +1,172 @@
-[![Docker Image CI](https://github.com/Overal-X/api.formatio/actions/workflows/container-ci.yaml/badge.svg)](https://github.com/Overal-X/api.formatio/actions/workflows/container-ci.yaml)
+# idp API
 
-## Formatio
+idp is a Go backend service for managing machines, networks, repository connections, and deployments with authentication and async job processing.
 
-Formatio aims to imitate the behavior of virtual machines, but using docker containers in place of VMs.
-This helps with fast setup of environments and portability.
+## Requirements
 
-With Formatio, you should be able to deploy your applications with little effort and optimal configurations at a minimum cost.
-Surely, there would be support for automatic deployments from Git supported code respositories, like Github, Gitlab, etc.
+- Go `1.22+`
+- Docker and Docker Compose
 
-> Formatio is a latin word for `formation`
+## Environment Setup
 
-# Run tests
+1. Copy env template:
 
 ```bash
-$ go test -v ./tests/unit/... # unit tests
+cp .env.sample .env
 ```
 
-# Docker Build
+2. Fill required values in `.env`:
 
-For production
+- `DATABASE_URL`
+- `APP_PORT`
+- `JWT_ACCESS_KEY`, `JWT_REFRESH_KEY`
+- `RABBITMQ_URL`
+- `REDIS_URL`
+- `GH_APP_SLUG`, `GH_APP_ID`, `GH_APP_CLIENT_ID`, `GH_APP_CLIENT_SECRET`, `GH_PRIVATE_KEY`
+- `DEFAULT_ADMIN_EMAIL`, `DEFAULT_ADMIN_PASS`
+- `K8S_CLUSTER_CONFIG`
+- `INGRESS_ROOT_DOMAIN`
+
+## Running Locally
+
+### 1) Start dependencies
 
 ```bash
-$ docker build -t api.formatio . \
+docker compose up -d
+```
+
+This starts:
+- PostgreSQL on `5432`
+- RabbitMQ on `5672` (management UI on `15672`)
+- Redis on `6379`
+
+### 2) Install dependencies
+
+```bash
+go mod download
+```
+
+### 3) Run database migrations and Prisma client generation
+
+```bash
+go run github.com/steebchen/prisma-client-go migrate deploy
+go run github.com/steebchen/prisma-client-go generate
+```
+
+### 4) Run the API
+
+```bash
+go run .
+```
+
+The app listens on `0.0.0.0:${APP_PORT}`.
+The WebSocket server listens on `0.0.0.0:${SOCKET_PORT}`.
+
+## Helpful Task Commands
+
+If you use `task`:
+
+```bash
+task dev                 # run app
+task db:make-migrations  # create new migration and regenerate client
+task db:apply-migrations # apply migrations
+task db:generate         # regenerate Prisma client
+task test                # run service tests
+task doc:generate        # regenerate swagger docs
+```
+
+## Testing
+
+Run service tests:
+
+```bash
+go test ./services -v
+```
+
+Run unit tests directory:
+
+```bash
+go test -v ./tests/unit/...
+```
+
+## API Endpoints
+
+Base path: `/api/v1`
+
+### Auth
+
+- `POST /auth/register/`
+- `POST /auth/login/`
+- `POST /auth/refresh-access-token/`
+
+### User
+
+- `GET /user/profile/`
+- `PATCH /user/profile/`
+
+### Machines
+
+- `GET /machine/`
+- `POST /machine/`
+- `GET /machine/:machineId`
+- `PATCH /machine/:machineId`
+- `DELETE /machine/:machineId`
+
+### Networks
+
+- `GET /network/`
+- `POST /network/`
+- `DELETE /network/:networkId`
+
+### GitHub
+
+- `GET /gh/repos`
+- `GET /gh/authorize`
+- `GET /gh/update-app-access`
+- `GET /gh/account-connections`
+
+### Repo Connections
+
+- `POST /repo-connection/`
+- `GET /repo-connection/`
+- `GET /repo-connection:connectionId`
+- `PATCH /repo-connection:connectionId`
+- `DELETE /repo-connection:connectionId`
+
+Note: repo connection detail/update/delete routes currently do not include a `/` before `:connectionId`.
+
+### Deployments
+
+- `GET /deployments/`
+- `POST /deployments/deploy`
+- `GET /deployments/:deploymentId`
+- `GET /deployments/:deploymentId/logs`
+
+### Callback
+
+- `GET /callback/github/`
+
+### Webhook
+
+- `POST /webhook/github/`
+
+## WebSocket
+
+Connect to:
+
+```text
+ws://localhost:${SOCKET_PORT}/ws?event=<event-name>
+```
+
+Current event channels:
+
+- `deployment-notification-event/<machineId>`
+- `deployment-log-stream-event`
+
+## Production Docker Build
+
+```bash
+docker build -t idp . \
   --target production \
   --build-arg infisical_token=<infisical_token> \
   --build-arg infisical_project_id=<infisical_project_id> \

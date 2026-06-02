@@ -1,9 +1,9 @@
 package types
 
-import "pkg.formatio/lib"
+import "github.com/struckchure/idp/internals"
 
 type ListProjectArgs struct {
-	lib.BaseListFilterArgs
+	internals.BaseListFilterArgs
 
 	OwnerId string `json:"ownerId"`
 }

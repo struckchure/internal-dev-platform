@@ -5,19 +5,19 @@ with-expecter: False
 mockname: "Mock{{.InterfaceName}}"
 all: True
 packages:
-  pkg.formatio/dao:
+  github.com/struckchure/idp/dao:
     config:
       recursive: True
       dir: "mocks/{{.PackageName}}"
       outpkg: mocks
       inpackage: False
-  pkg.formatio/services:
+  github.com/struckchure/idp/services:
     config:
       recursive: True
       dir: "mocks/{{.PackageName}}"
       outpkg: mocks
       inpackage: False
-  pkg.formatio/lib:
+  github.com/struckchure/idp/internals:
     config:
       recursive: True
       dir: "mocks/{{.PackageName}}"

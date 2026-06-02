@@ -3,8 +3,8 @@ package routers
 import (
 	"github.com/gofiber/fiber/v3"
 
-	"pkg.formatio/handlers"
-	"pkg.formatio/middlewares"
+	"github.com/struckchure/idp/handlers"
+	"github.com/struckchure/idp/middlewares"
 )
 
 func NewUsersRouter(
@@ -17,7 +17,6 @@ func NewUsersRouter(
 	authGroup.Post("/register/", userHandler.RegisterUser)
 	authGroup.Post("/login/", userHandler.LoginUser)
 	authGroup.Post("/refresh-access-token/", userHandler.RefreshAccessToken)
-	authGroup.Post("/social-connection/", userHandler.AuthSocialConnection)
 
 	userGroup := app.Group("/api/v1/user", jwtMiddleware.Use, userMiddleware.Use)
 	userGroup.Get("/profile/", userHandler.GetProfileUser)

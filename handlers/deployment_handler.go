@@ -4,14 +4,14 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/samber/lo"
 
-	"pkg.formatio/dao"
-	"pkg.formatio/lib"
-	"pkg.formatio/services"
-	"pkg.formatio/types"
+	"github.com/struckchure/idp/dao"
+	"github.com/struckchure/idp/internals"
+	"github.com/struckchure/idp/services"
+	"github.com/struckchure/idp/types"
 )
 
 type DeploymentHandler struct {
-	rmq lib.RabbitMQ
+	rmq internals.RabbitMQ
 
 	deploymentService    *services.DeploymentService
 	deploymentLogService *services.DeploymentLogService
@@ -32,7 +32,7 @@ func (h *DeploymentHandler) ListDeployments(c fiber.Ctx) error {
 		MachineId: lo.ToPtr(fiber.Query[string](c, "machineId")),
 	})
 	if err != nil {
-		return lib.TranslateHandlerError(c, err)
+		return internals.TranslateHandlerError(c, err)
 	}
 
 	return c.Status(fiber.StatusOK).JSON(deployments)
@@ -52,7 +52,7 @@ func (h *DeploymentHandler) GetDeployment(c fiber.Ctx) error {
 
 	deployments, err := h.deploymentService.GetDeployment(args)
 	if err != nil {
-		return lib.TranslateHandlerError(c, err)
+		return internals.TranslateHandlerError(c, err)
 	}
 
 	return c.Status(fiber.StatusOK).JSON(deployments)
@@ -73,7 +73,7 @@ func (h *DeploymentHandler) ListDeploymentLogs(c fiber.Ctx) error {
 		Id: deploymentId,
 	})
 	if err != nil {
-		return lib.TranslateHandlerError(c, err)
+		return internals.TranslateHandlerError(c, err)
 	}
 
 	return c.Status(fiber.StatusOK).JSON(deploymentLogs)
@@ -97,14 +97,14 @@ func (h *DeploymentHandler) DeployRepo(c fiber.Ctx) error {
 
 	err := h.deploymentService.DeployRepo(args)
 	if err != nil {
-		return lib.TranslateHandlerError(c, err)
+		return internals.TranslateHandlerError(c, err)
 	}
 
 	return c.Status(fiber.StatusOK).JSON(nil)
 }
 
 func NewDeploymentHandler(
-	rmq lib.RabbitMQ,
+	rmq internals.RabbitMQ,
 	deploymentService *services.DeploymentService,
 	deploymentLogDAO dao.IDeploymentLogDao,
 	deploymentLogService *services.DeploymentLogService,

@@ -3,9 +3,9 @@ package handlers
 import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/samber/lo"
-	"pkg.formatio/lib"
-	"pkg.formatio/services"
-	"pkg.formatio/types"
+	"github.com/struckchure/idp/internals"
+	"github.com/struckchure/idp/services"
+	"github.com/struckchure/idp/types"
 )
 
 type IRepoConnectionHandler interface {
@@ -38,7 +38,7 @@ func (r *RepoConnectionHandler) ListRepoConnections(c fiber.Ctx) error {
 
 	repoConnections, err := r.repoConnectionService.ListRepoConnections(args)
 	if err != nil {
-		return lib.TranslateHandlerError(c, err)
+		return internals.TranslateHandlerError(c, err)
 	}
 
 	return c.Status(fiber.StatusOK).JSON(repoConnections)
@@ -62,7 +62,7 @@ func (r *RepoConnectionHandler) CreateRepoConnection(c fiber.Ctx) error {
 
 	connection, err := r.repoConnectionService.CreateRepoConnection(args)
 	if err != nil {
-		return lib.TranslateHandlerError(c, err)
+		return internals.TranslateHandlerError(c, err)
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(connection)
@@ -82,7 +82,7 @@ func (r *RepoConnectionHandler) GetRepoConnection(c fiber.Ctx) error {
 		types.GetRepoConnectionArgs{Id: fiber.Params[string](c, "connectionId")},
 	)
 	if err != nil {
-		return lib.TranslateHandlerError(c, err)
+		return internals.TranslateHandlerError(c, err)
 	}
 
 	return c.Status(fiber.StatusOK).JSON(repoConnection)
@@ -107,7 +107,7 @@ func (r *RepoConnectionHandler) UpdateRepoConnection(c fiber.Ctx) error {
 
 	projects, err := r.repoConnectionService.UpdateRepoConnection(args)
 	if err != nil {
-		return lib.TranslateHandlerError(c, err)
+		return internals.TranslateHandlerError(c, err)
 	}
 
 	return c.Status(fiber.StatusAccepted).JSON(projects)
@@ -127,7 +127,7 @@ func (r *RepoConnectionHandler) DeleteRepoConnection(c fiber.Ctx) error {
 		types.DeleteRepoConnectionArgs{Id: fiber.Params[string](c, "connectionId")},
 	)
 	if err != nil {
-		return lib.TranslateHandlerError(c, err)
+		return internals.TranslateHandlerError(c, err)
 	}
 
 	return c.Status(fiber.StatusNoContent).JSON(nil)

@@ -3,9 +3,9 @@ package dao
 import (
 	"context"
 
-	"pkg.formatio/lib"
-	"pkg.formatio/prisma/db"
-	"pkg.formatio/types"
+	"github.com/struckchure/idp/internals"
+	"github.com/struckchure/idp/prisma/db"
+	"github.com/struckchure/idp/types"
 )
 
 type IGithubAccountConnectionDao interface {
@@ -84,7 +84,7 @@ func (d *GithubAccountConnectionDao) DeleteConnection(args types.DeleteGithubAcc
 }
 
 func NewGithubAccountConnectionDao(
-	connection *lib.DatabaseConnection,
+	connection *internals.DatabaseConnection,
 	userDAO IUserDao,
 ) IGithubAccountConnectionDao {
 	return &GithubAccountConnectionDao{

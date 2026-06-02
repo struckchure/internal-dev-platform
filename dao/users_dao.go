@@ -3,9 +3,9 @@ package dao
 import (
 	"context"
 
-	"pkg.formatio/lib"
-	"pkg.formatio/prisma/db"
-	"pkg.formatio/types"
+	"github.com/struckchure/idp/internals"
+	"github.com/struckchure/idp/prisma/db"
+	"github.com/struckchure/idp/types"
 )
 
 type IUserDao interface {
@@ -22,13 +22,13 @@ type UserDao struct {
 }
 
 func (d *UserDao) ListUsers(args types.ListUsersArgs) ([]db.UserModel, error) {
-	args.Skip = lib.UseDefaultValueIf(0, args.Skip, 0)
-	args.Take = lib.UseDefaultValueIf(0, args.Take, 10)
+	args.Skip = internals.UseDefaultValueIf(0, args.Skip, 0)
+	args.Take = internals.UseDefaultValueIf(0, args.Take, 10)
 
 	return d.client.User.
 		FindMany().
-		Skip(lib.UseDefault(args.Skip, 0)).
-		Take(lib.UseDefault(args.Take, 10)).
+		Skip(internals.UseDefault(args.Skip, 0)).
+		Take(internals.UseDefault(args.Take, 10)).
 		Exec(d.ctx)
 }
 
@@ -74,7 +74,7 @@ func (d *UserDao) DeleteUser(args types.DeleteUserArgs) error {
 	return err
 }
 
-func NewUserDao(connection *lib.DatabaseConnection) IUserDao {
+func NewUserDao(connection *internals.DatabaseConnection) IUserDao {
 	return &UserDao{
 		client: connection.Client,
 		ctx:    context.Background(),

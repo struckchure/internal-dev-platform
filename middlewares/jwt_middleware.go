@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v3"
-	"pkg.formatio/lib"
+	"github.com/struckchure/idp/internals"
 )
 
 type IJwtMiddleware interface {
@@ -12,7 +12,7 @@ type IJwtMiddleware interface {
 }
 
 type JwtMiddleware struct {
-	jwt lib.IJwt
+	jwt internals.IJwt
 }
 
 type headersArgs struct {
@@ -28,7 +28,7 @@ func (m *JwtMiddleware) Use(c fiber.Ctx) error {
 	}
 
 	jwtToken := strings.SplitN(headers.Authorization, " ", 2)
-	verifiedJwtToken, err := m.jwt.VerifyJWT(jwtToken[1], lib.ACCESS_TOKEN_TYPE)
+	verifiedJwtToken, err := m.jwt.VerifyJWT(jwtToken[1], internals.ACCESS_TOKEN_TYPE)
 	if err != nil {
 		return c.
 			Status(fiber.StatusUnauthorized).
@@ -47,6 +47,6 @@ func (m *JwtMiddleware) Use(c fiber.Ctx) error {
 	return c.Next()
 }
 
-func NewJwtMiddleware(jwt lib.IJwt) IJwtMiddleware {
+func NewJwtMiddleware(jwt internals.IJwt) IJwtMiddleware {
 	return &JwtMiddleware{jwt: jwt}
 }

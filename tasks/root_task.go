@@ -3,8 +3,8 @@ package tasks
 import (
 	"context"
 
+	"github.com/struckchure/idp/internals"
 	"go.uber.org/fx"
-	"pkg.formatio/lib"
 )
 
 func NewRootTasks(
@@ -13,9 +13,8 @@ func NewRootTasks(
 	machineTasks MachineTasks,
 	deploymentTasks DeploymentTasks,
 	githubTasks GithubTasks,
-	billingTasks BillingTasks,
 
-	k8sInformer lib.IInformer,
+	k8sInformer internals.IInformer,
 ) {
 	k8sInformerChannel := make(chan struct{})
 
@@ -26,13 +25,10 @@ func NewRootTasks(
 			go machineTasks.DeleteMachineTask()
 			go machineTasks.RedeployOnMachineUpdateTask()
 
-			// go deploymentTasks.DeploymentNotificationTask()
-			// go deploymentTasks.DeploymentLogsTask()
+			go deploymentTasks.DeploymentNotificationTask()
+			go deploymentTasks.DeploymentLogsTask()
 
 			go githubTasks.DeployRepoTask()
-
-			go billingTasks.ScheduleMachineInvoicesTask()
-			go billingTasks.ProcessInvoiceTask()
 
 			return nil
 		},

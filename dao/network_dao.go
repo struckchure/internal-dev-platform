@@ -3,9 +3,9 @@ package dao
 import (
 	"context"
 
-	"pkg.formatio/lib"
-	"pkg.formatio/prisma/db"
-	"pkg.formatio/types"
+	"github.com/struckchure/idp/internals"
+	"github.com/struckchure/idp/prisma/db"
+	"github.com/struckchure/idp/types"
 )
 
 type INetworkDao interface {
@@ -24,8 +24,8 @@ type NetworkDao struct {
 }
 
 func (n *NetworkDao) ListNetworks(args types.ListNetworksArgs) ([]db.NetworkModel, error) {
-	args.Skip = lib.UseDefaultValueIf(0, args.Skip, 0)
-	args.Take = lib.UseDefaultValueIf(0, args.Take, 10)
+	args.Skip = internals.UseDefaultValueIf(0, args.Skip, 0)
+	args.Take = internals.UseDefaultValueIf(0, args.Take, 10)
 
 	return n.client.Network.
 		FindMany(
@@ -87,7 +87,7 @@ func (n *NetworkDao) DeleteNetwork(args types.DeleteNetworkArgs) error {
 }
 
 func NewNetworkDao(
-	connection *lib.DatabaseConnection,
+	connection *internals.DatabaseConnection,
 	machineDAO IMachineDao,
 ) INetworkDao {
 	return &NetworkDao{

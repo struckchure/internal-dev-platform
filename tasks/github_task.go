@@ -4,18 +4,18 @@ import (
 	"encoding/json"
 	"log"
 
-	"pkg.formatio/lib"
-	"pkg.formatio/services"
-	"pkg.formatio/types"
+	"github.com/struckchure/idp/internals"
+	"github.com/struckchure/idp/services"
+	"github.com/struckchure/idp/types"
 )
 
 type GithubTasks struct {
-	rmq           lib.RabbitMQ
+	rmq           internals.RabbitMQ
 	githubService services.IGithubService
 }
 
 func (t *GithubTasks) DeployRepoTask() {
-	t.rmq.SubscribeWithWorkers(2, lib.SubscribeArgs{
+	t.rmq.SubscribeWithWorkers(2, internals.SubscribeArgs{
 		Queue: types.DEPLOYMENT_DEPLOY_REPO_QUEUE,
 		Callback: func(body string) error {
 			var payload types.DeployRepoArgs
@@ -37,7 +37,7 @@ func (t *GithubTasks) DeployRepoTask() {
 }
 
 func NewGithubTasks(
-	rmq lib.RabbitMQ,
+	rmq internals.RabbitMQ,
 	githubService services.IGithubService,
 ) GithubTasks {
 	return GithubTasks{

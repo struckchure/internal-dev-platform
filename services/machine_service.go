@@ -3,16 +3,15 @@ package services
 import (
 	"encoding/json"
 	"log"
-	"net/http"
 	"strings"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/samber/lo"
 
-	"pkg.formatio/dao"
-	"pkg.formatio/lib"
-	"pkg.formatio/prisma/db"
-	"pkg.formatio/types"
+	"github.com/struckchure/idp/dao"
+	"github.com/struckchure/idp/internals"
+	"github.com/struckchure/idp/prisma/db"
+	"github.com/struckchure/idp/types"
 )
 
 const (
@@ -33,11 +32,10 @@ type IMachineService interface {
 }
 
 type MachineService struct {
-	rmq              lib.RabbitMQ
-	containerManager lib.IContainerManager
+	rmq              internals.RabbitMQ
+	containerManager internals.IContainerManager
 
-	machinePlanService IMachinePlanService
-	machineDAO         dao.IMachineDao
+	machineDAO dao.IMachineDao
 }
 
 func (m *MachineService) ListMachines(args types.ListMachineArgs) (machines []db.MachineModel, err error) {
@@ -51,36 +49,24 @@ func (m *MachineService) ListMachines(args types.ListMachineArgs) (machines []db
 }
 
 func (m *MachineService) CreateMachine(args types.CreateMachineArgs) (*db.MachineModel, error) {
-	plan, err := m.machinePlanService.GetMachinePlan(types.GetMachinePlanArgs{Id: args.PlanId})
-	if err != nil {
-		return nil, lib.TranslateDAOError(err)
-	}
-
-	_, planIsAvailabled := plan.DeletedAt()
-	if planIsAvailabled {
-		return nil, lib.HttpError{
-			Message:    "plan is not available at the moment",
-			StatusCode: http.StatusNotAcceptable,
-		}
-	}
-
 	machine, err := m.machineDAO.CreateMachine(
 		types.CreateMachineArgs{
 			OwnerId:       args.OwnerId,
-			PlanId:        args.PlanId,
+			CPU:           args.CPU,
+			Memory:        args.Memory,
 			MachineName:   args.MachineName,
 			MachineImage:  args.MachineImage,
 			MachineStatus: db.MachineStatusCreating,
 		})
 
 	if err != nil {
-		return nil, lib.TranslateDAOError(err)
+		return nil, internals.TranslateDAOError(err)
 	}
 
 	var _payload struct{ Id string } = struct{ Id string }{Id: machine.ID}
 	payload, _ := json.Marshal(_payload)
 
-	m.rmq.Publish(lib.PublishArgs{
+	m.rmq.Publish(internals.PublishArgs{
 		Queue:   CREATE_MACHINE_QUEUE,
 		Content: string(payload),
 	})
@@ -96,18 +82,19 @@ func (m *MachineService) CreateMachineEventHandler(args types.CreateMachineEvent
 
 	machineName, _ := machine.MachineName()
 	machineImage, _ := machine.MachineImage()
-	machinePlan := machine.Plan()
+	cpu, _ := machine.CPU()
+	memory, _ := machine.Memory()
 
 	container, err := m.containerManager.CreateContainer(
-		lib.CreateContainerArgs{
+		internals.CreateContainerArgs{
 			Replicas: 1,
 			Labels: map[string]string{
-				"formatio-app": strings.ToLower(lib.RandomString(15)),
+				"formatio-app": strings.ToLower(internals.RandomString(15)),
 			},
 			Name:   machineName,
 			Image:  machineImage,
-			CPU:    machinePlan.CPU,
-			Memory: machinePlan.Memory,
+			CPU:    cpu,
+			Memory: memory,
 		})
 
 	if err != nil {
@@ -168,7 +155,7 @@ func (m *MachineService) UpdateMachine(args types.UpdateMachineArgs) error {
 	}
 	payload, _ := json.Marshal(_payload)
 
-	m.rmq.Publish(lib.PublishArgs{
+	m.rmq.Publish(internals.PublishArgs{
 		Queue:   UPDATE_MACHINE_QUEUE,
 		Content: string(payload),
 	})
@@ -177,7 +164,7 @@ func (m *MachineService) UpdateMachine(args types.UpdateMachineArgs) error {
 }
 
 func (m *MachineService) UpdateMachineEventHandler(args types.UpdateMachineArgs) error {
-	m.containerManager.UpdateContainer(lib.UpdateContainerArgs{
+	m.containerManager.UpdateContainer(internals.UpdateContainerArgs{
 		DeploymentName: *args.ContainerId,
 		Ports:          *args.Ports,
 	})
@@ -212,7 +199,7 @@ func (m *MachineService) DeleteMachine(args types.DeleteMachineArgs) error {
 	}
 	payload, _ := json.Marshal(_payload)
 
-	m.rmq.Publish(lib.PublishArgs{
+	m.rmq.Publish(internals.PublishArgs{
 		Queue:   DELETE_MACHINE_QUEUE,
 		Content: string(payload),
 	})
@@ -226,23 +213,19 @@ func (m *MachineService) DeleteMachineEventHandler(args types.DeleteMachineEvent
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}
 
-	m.containerManager.DeleteContainer(lib.DeleteContainerArgs{DeploymentName: *args.ContainerId})
+	m.containerManager.DeleteContainer(internals.DeleteContainerArgs{DeploymentName: *args.ContainerId})
 
 	return nil
 }
 
 func NewMachineService(
-	rmq lib.RabbitMQ,
-	containerManager lib.IContainerManager,
-
-	machinePlanService IMachinePlanService,
+	rmq internals.RabbitMQ,
+	containerManager internals.IContainerManager,
 	machineDAO dao.IMachineDao,
 ) IMachineService {
 	return &MachineService{
 		rmq:              rmq,
 		containerManager: containerManager,
-
-		machinePlanService: machinePlanService,
-		machineDAO:         machineDAO,
+		machineDAO:       machineDAO,
 	}
 }

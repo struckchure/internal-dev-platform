@@ -3,9 +3,9 @@ package dao
 import (
 	"context"
 
-	"pkg.formatio/lib"
-	"pkg.formatio/prisma/db"
-	"pkg.formatio/types"
+	"github.com/struckchure/idp/internals"
+	"github.com/struckchure/idp/prisma/db"
+	"github.com/struckchure/idp/types"
 )
 
 type IRepoConnectionDao interface {
@@ -70,7 +70,7 @@ func (p *RepoConnectionDao) DeleteRepoConnection(args types.DeleteRepoConnection
 	return err
 }
 
-func NewRepoConnectionDao(connection *lib.DatabaseConnection, machineDAO IMachineDao) IRepoConnectionDao {
+func NewRepoConnectionDao(connection *internals.DatabaseConnection, machineDAO IMachineDao) IRepoConnectionDao {
 	return &RepoConnectionDao{
 		client: connection.Client,
 		ctx:    context.Background(),

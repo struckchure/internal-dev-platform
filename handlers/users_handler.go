@@ -3,10 +3,10 @@ package handlers
 import (
 	"github.com/gofiber/fiber/v3"
 
-	"pkg.formatio/lib"
-	"pkg.formatio/prisma/db"
-	"pkg.formatio/services"
-	"pkg.formatio/types"
+	"github.com/struckchure/idp/internals"
+	"github.com/struckchure/idp/prisma/db"
+	"github.com/struckchure/idp/services"
+	"github.com/struckchure/idp/types"
 )
 
 type IUserHandler interface {
@@ -16,8 +16,6 @@ type IUserHandler interface {
 
 	GetProfileUser(fiber.Ctx) error
 	UpdateProfileUser(fiber.Ctx) error
-
-	AuthSocialConnection(fiber.Ctx) error
 }
 
 type UserHandler struct {
@@ -42,7 +40,7 @@ func (h *UserHandler) LoginUser(c fiber.Ctx) error {
 
 	user, err := h.userService.LoginUser(args)
 	if err != nil {
-		return lib.TranslateHandlerError(c, err)
+		return internals.TranslateHandlerError(c, err)
 	}
 
 	return c.Status(fiber.StatusOK).JSON(user)
@@ -94,30 +92,6 @@ func (h *UserHandler) RefreshAccessToken(c fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(tokens)
-}
-
-// AuthSocialConnection godoc
-//
-// @ID			authSocialConnection
-// @Tags    auth
-// @Accept  json
-// @Produce json
-// @Param		args											body			types.Auth0UserArgs	true "Auth0 User"
-// @Success 200												{object}	types.LoginUserResult
-// @Router  /auth/social-connection/ 	[post]
-func (u *UserHandler) AuthSocialConnection(c fiber.Ctx) error {
-	args := types.Auth0UserArgs{}
-
-	if err := c.Bind().JSON(&args); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(err)
-	}
-
-	user, err := u.userService.AuthSocialConnection(args)
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(err)
-	}
-
-	return c.Status(fiber.StatusOK).JSON(&user)
 }
 
 // GetProfileUser godoc

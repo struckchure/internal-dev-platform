@@ -22,10 +22,10 @@ import (
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 
-	"pkg.formatio/dao"
-	"pkg.formatio/lib"
-	"pkg.formatio/prisma/db"
-	"pkg.formatio/types"
+	"github.com/struckchure/idp/dao"
+	"github.com/struckchure/idp/internals"
+	"github.com/struckchure/idp/prisma/db"
+	"github.com/struckchure/idp/types"
 )
 
 type IGithubService interface {
@@ -49,10 +49,10 @@ type IGithubService interface {
 }
 
 type GithubService struct {
-	env                        lib.Env
-	rmq                        lib.RabbitMQ
-	redis                      lib.IRedis
-	containerManager           lib.IContainerManager
+	env                        internals.Env
+	rmq                        internals.RabbitMQ
+	redis                      internals.IRedis
+	containerManager           internals.IContainerManager
 	repoConnectionDao          dao.IRepoConnectionDao
 	machineService             IMachineService
 	deploymentDAO              dao.IDeploymentDao
@@ -106,7 +106,7 @@ func (g *GithubService) DeployRepoHandler(args types.DeployRepoArgs) error {
 		return err
 	}
 
-	mtx := lib.NewMutext().CreateMutext(machineId)
+	mtx := internals.NewMutext().CreateMutext(machineId)
 	mtx.Lock()
 	defer mtx.Unlock()
 
@@ -171,7 +171,7 @@ func (g *GithubService) DeployRepoHandler(args types.DeployRepoArgs) error {
 		log.Println(err)
 	}
 
-	err = g.rmq.Publish(lib.PublishArgs{
+	err = g.rmq.Publish(internals.PublishArgs{
 		Queue:   types.DEPLOYMENT_NOTIFICATION_EVENT,
 		Content: string(payload),
 	})
@@ -379,7 +379,7 @@ func (g *GithubService) DeployRepo(args types.DeployRepoArgs) error {
 		return err
 	}
 
-	return g.rmq.Publish(lib.PublishArgs{
+	return g.rmq.Publish(internals.PublishArgs{
 		Queue:   types.DEPLOYMENT_DEPLOY_REPO_QUEUE,
 		Content: string(payload),
 	})
@@ -565,12 +565,12 @@ func (g *GithubService) ConnectGithubAccount(args types.ConnectGithubAccountArgs
 	)
 	if err != nil {
 		switch e := err.(type) {
-		case lib.DatabaseError:
-			if e.ErrorCode != lib.ErrorCodeDuplicateEntry {
-				return nil, lib.TranslateDAOError(e)
+		case internals.DatabaseError:
+			if e.ErrorCode != internals.ErrorCodeDuplicateEntry {
+				return nil, internals.TranslateDAOError(e)
 			}
 		default:
-			return nil, lib.TranslateDAOError(e)
+			return nil, internals.TranslateDAOError(e)
 		}
 	}
 
@@ -593,7 +593,7 @@ func (g *GithubService) UpdateAppAccess(args types.AuthorizeGithubAccountArgs) (
 	}
 
 	if len(userConnections) == 0 {
-		return nil, lib.HttpError{Message: "github acccount not authorized"}
+		return nil, internals.HttpError{Message: "github acccount not authorized"}
 	}
 
 	token, err := g.generateJwt()
@@ -624,7 +624,7 @@ func (g *GithubService) UpdateAppAccess(args types.AuthorizeGithubAccountArgs) (
 		GithubInstallationId: lo.ToPtr(int(*installation.ID)),
 	})
 	if err != nil {
-		return nil, lib.TranslateDAOError(err)
+		return nil, internals.TranslateDAOError(err)
 	}
 
 	installtionUpdateLink := fmt.Sprintf("https://github.com/settings/installations/%d", int(*installation.ID))
@@ -640,7 +640,7 @@ func (g *GithubService) ListAccountConnections(args types.ListGithubAccountConne
 		UserId: args.UserId,
 	})
 	if err != nil {
-		return nil, lib.TranslateDAOError(err)
+		return nil, internals.TranslateDAOError(err)
 	}
 
 	return connections, nil
@@ -781,7 +781,7 @@ func (g *GithubService) publishDeploymentLog(args types.CreateDeploymentLogArgs)
 		return err
 	}
 
-	err = g.rmq.Publish(lib.PublishArgs{
+	err = g.rmq.Publish(internals.PublishArgs{
 		Queue:   types.DEPLOYMENT_LOG_EVENT_QUEUE,
 		Content: string(payload),
 	})
@@ -805,10 +805,10 @@ func (g *GithubService) parseAction(content string) (*types.Action, error) {
 }
 
 func NewGithubService(
-	rmq lib.RabbitMQ,
-	redis lib.IRedis,
-	env lib.Env,
-	container lib.IContainerManager,
+	rmq internals.RabbitMQ,
+	redis internals.IRedis,
+	env internals.Env,
+	container internals.IContainerManager,
 
 	machineService IMachineService,
 	repoConnectionDao dao.IRepoConnectionDao,

@@ -1,9 +1,9 @@
 package types
 
-import "pkg.formatio/lib"
+import "github.com/struckchure/idp/internals"
 
 type ListRepoConnectionArgs struct {
-	*lib.BaseListFilterArgs
+	*internals.BaseListFilterArgs
 
 	RepoId    *string `json:"repoId,omitempty" swag-validate:"optional" swaggerignore:"true"`
 	OwnerId   *string `json:"ownerId,omitempty" swaggerignore:"true"`

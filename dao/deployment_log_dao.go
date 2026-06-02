@@ -3,9 +3,9 @@ package dao
 import (
 	"context"
 
-	"pkg.formatio/lib"
-	"pkg.formatio/prisma/db"
-	"pkg.formatio/types"
+	"github.com/struckchure/idp/internals"
+	"github.com/struckchure/idp/prisma/db"
+	"github.com/struckchure/idp/types"
 )
 
 type IDeploymentLogDao interface {
@@ -24,8 +24,8 @@ type DeploymentLogDao struct {
 }
 
 func (d *DeploymentLogDao) ListLogs(args types.ListDeploymentLogArgs) ([]db.DeploymentLogModel, error) {
-	args.Skip = lib.UseDefaultValueIf(0, args.Skip, 0)
-	args.Take = lib.UseDefaultValueIf(0, args.Take, 10)
+	args.Skip = internals.UseDefaultValueIf(0, args.Skip, 0)
+	args.Take = internals.UseDefaultValueIf(0, args.Take, 10)
 
 	return d.client.DeploymentLog.
 		FindMany(
@@ -75,7 +75,7 @@ func (d *DeploymentLogDao) DeleteLog(args types.DeleteDeploymentLogArgs) error {
 }
 
 func NewDeploymentLogDao(
-	connection *lib.DatabaseConnection,
+	connection *internals.DatabaseConnection,
 	deploymentDao IDeploymentDao,
 ) IDeploymentLogDao {
 	return &DeploymentLogDao{

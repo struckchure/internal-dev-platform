@@ -3,9 +3,9 @@ package dao
 import (
 	"context"
 
-	"pkg.formatio/lib"
-	"pkg.formatio/prisma/db"
-	"pkg.formatio/types"
+	"github.com/struckchure/idp/internals"
+	"github.com/struckchure/idp/prisma/db"
+	"github.com/struckchure/idp/types"
 )
 
 type IDeploymentDao interface {
@@ -74,7 +74,7 @@ func (d *DeploymentDao) DeleteDeployment(args types.DeleteDeploymentArgs) error 
 }
 
 func NewDeploymentDao(
-	connection *lib.DatabaseConnection,
+	connection *internals.DatabaseConnection,
 	machineDao IMachineDao,
 	repoConnectionDao IRepoConnectionDao,
 ) IDeploymentDao {

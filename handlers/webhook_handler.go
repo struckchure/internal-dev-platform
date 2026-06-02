@@ -3,8 +3,8 @@ package handlers
 import (
 	"github.com/gofiber/fiber/v3"
 
-	"pkg.formatio/services"
-	"pkg.formatio/types"
+	"github.com/struckchure/idp/services"
+	"github.com/struckchure/idp/types"
 )
 
 type IWebhookHandler interface {

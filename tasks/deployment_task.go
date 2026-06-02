@@ -2,20 +2,20 @@ package tasks
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 
-	"github.com/overal-x/rodelar-go-sdk"
-	"pkg.formatio/lib"
-	"pkg.formatio/types"
+	"github.com/struckchure/idp/internals"
+	"github.com/struckchure/idp/types"
 )
 
 type DeploymentTasks struct {
-	rmq           lib.RabbitMQ
-	rodelarClient rodelar.IRodelarClient
+	rmq          internals.RabbitMQ
+	webSocketHub *internals.WebSocketHub
 }
 
 func (t *DeploymentTasks) DeploymentNotificationTask() {
-	t.rmq.Subscribe(lib.SubscribeArgs{
+	t.rmq.Subscribe(internals.SubscribeArgs{
 		Queue: types.DEPLOYMENT_NOTIFICATION_EVENT,
 		Callback: func(body string) error {
 			var dto map[string]any
@@ -26,15 +26,7 @@ func (t *DeploymentTasks) DeploymentNotificationTask() {
 				return err
 			}
 
-			// err = t.rodelarClient.Publish(rodelar.PublishArgs{
-			// 	Event:   fmt.Sprintf("%s/%s", types.DEPLOYMENT_NOTIFICATION_EVENT, dto["machineId"]),
-			// 	Message: dto,
-			// })
-			// if err != nil {
-			// 	log.Println(err)
-
-			// 	return err
-			// }
+			t.webSocketHub.Publish(fmt.Sprintf("%s/%v", types.DEPLOYMENT_NOTIFICATION_EVENT, dto["machineId"]), dto)
 
 			return nil
 		},
@@ -42,7 +34,7 @@ func (t *DeploymentTasks) DeploymentNotificationTask() {
 }
 
 func (t *DeploymentTasks) DeploymentLogsTask() {
-	t.rmq.Subscribe(lib.SubscribeArgs{
+	t.rmq.Subscribe(internals.SubscribeArgs{
 		Queue: types.DEPLOYMENT_LOG_EVENT_QUEUE,
 		Callback: func(body string) error {
 			// var payload db.DeploymentLogModel
@@ -53,15 +45,7 @@ func (t *DeploymentTasks) DeploymentLogsTask() {
 			// 	return err
 			// }
 
-			// err = t.rodelarClient.Publish(rodelar.PublishArgs{
-			// 	Event:   fmt.Sprintf("%s/%s", types.DEPLOYMENT_LOG_STREAM_EVENT, payload.DeploymentID),
-			// 	Message: body,
-			// })
-			// if err != nil {
-			// 	log.Println(err)
-
-			// 	return err
-			// }
+			t.webSocketHub.Publish(types.DEPLOYMENT_LOG_STREAM_EVENT, body)
 
 			return nil
 		},
@@ -69,11 +53,11 @@ func (t *DeploymentTasks) DeploymentLogsTask() {
 }
 
 func NewDeploymentTasks(
-	rmq lib.RabbitMQ,
-	rodelarClient rodelar.IRodelarClient,
+	rmq internals.RabbitMQ,
+	webSocketHub *internals.WebSocketHub,
 ) DeploymentTasks {
 	return DeploymentTasks{
-		rmq:           rmq,
-		rodelarClient: rodelarClient,
+		rmq:          rmq,
+		webSocketHub: webSocketHub,
 	}
 }

@@ -5,10 +5,10 @@ import (
 
 	"github.com/google/go-github/v56/github"
 	"github.com/samber/lo"
-	"pkg.formatio/dao"
-	"pkg.formatio/lib"
-	"pkg.formatio/prisma/db"
-	"pkg.formatio/types"
+	"github.com/struckchure/idp/dao"
+	"github.com/struckchure/idp/internals"
+	"github.com/struckchure/idp/prisma/db"
+	"github.com/struckchure/idp/types"
 )
 
 type DeploymentService struct {
@@ -23,7 +23,7 @@ type DeploymentService struct {
 func (s *DeploymentService) ListDeployments(args types.ListDeploymentArgs) ([]db.DeploymentModel, error) {
 	deployments, err := s.deploymentDAO.ListDeployments(args)
 	if err != nil {
-		return nil, lib.TranslateDAOError(err)
+		return nil, internals.TranslateDAOError(err)
 	}
 
 	return deployments, nil
@@ -32,7 +32,7 @@ func (s *DeploymentService) ListDeployments(args types.ListDeploymentArgs) ([]db
 func (s *DeploymentService) GetDeployment(args types.GetDeploymentArgs) (*db.DeploymentModel, error) {
 	deployment, err := s.deploymentDAO.GetDeployment(args)
 	if err != nil {
-		return nil, lib.TranslateDAOError(err)
+		return nil, internals.TranslateDAOError(err)
 	}
 
 	return deployment, nil
@@ -118,7 +118,7 @@ func (s *DeploymentService) DeployRepo(args DeployRepoArgs) error {
 	// TODO: check object owner permission
 	repoConnection, err := s.repoConnectionDao.GetRepoConnection(types.GetRepoConnectionArgs{Id: args.ConnectionId})
 	if err != nil {
-		return lib.TranslateDAOError(err)
+		return internals.TranslateDAOError(err)
 	}
 
 	accountConnection, err := s.githubAccountConnectionDao.GetConnection(types.GetGithubAccountConnectionsArgs{

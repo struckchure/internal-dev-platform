@@ -3,9 +3,9 @@ package handlers
 import (
 	"github.com/gofiber/fiber/v3"
 
-	"pkg.formatio/lib"
-	"pkg.formatio/services"
-	"pkg.formatio/types"
+	"github.com/struckchure/idp/internals"
+	"github.com/struckchure/idp/services"
+	"github.com/struckchure/idp/types"
 )
 
 type ICallbackHandler interface {
@@ -26,7 +26,7 @@ func (w *CallbackHandler) GithubCallbackHandler(c fiber.Ctx) error {
 		Code:   code,
 	})
 	if err != nil {
-		return lib.TranslateHandlerError(c, err)
+		return internals.TranslateHandlerError(c, err)
 	}
 
 	return c.Redirect().Status(fiber.StatusMovedPermanently).To(*redirectUrl)

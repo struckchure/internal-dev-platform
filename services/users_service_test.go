@@ -8,40 +8,34 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
-	"pkg.formatio/lib"
-	dao_mocks "pkg.formatio/mocks/dao"
-	lib_mocks "pkg.formatio/mocks/lib"
-	"pkg.formatio/prisma/db"
-	"pkg.formatio/services"
-	"pkg.formatio/types"
+	"github.com/struckchure/idp/internals"
+	dao_mocks "github.com/struckchure/idp/mocks/dao"
+	internals_mocks "github.com/struckchure/idp/mocks/internals"
+	"github.com/struckchure/idp/prisma/db"
+	"github.com/struckchure/idp/services"
+	"github.com/struckchure/idp/types"
 )
 
 type UserServiceSuite struct {
 	suite.Suite
 
-	userService       services.IUserService
-	mockHasher        *lib_mocks.MockIHasher
-	mockAuth0         *lib_mocks.MockIAuth0
-	mockJwt           *lib_mocks.MockIJwt
-	mockConnectionDao *dao_mocks.MockISocialConnectionDao
-	mockUserDao       *dao_mocks.MockIUserDao
+	userService services.IUserService
+	mockHasher  *internals_mocks.MockIHasher
+	mockJwt     *internals_mocks.MockIJwt
+	mockUserDao *dao_mocks.MockIUserDao
 }
 
 func (s *UserServiceSuite) SetupTest() {
-	s.mockHasher = new(lib_mocks.MockIHasher)
-	s.mockAuth0 = new(lib_mocks.MockIAuth0)
-	s.mockJwt = new(lib_mocks.MockIJwt)
-	s.mockConnectionDao = new(dao_mocks.MockISocialConnectionDao)
+	s.mockHasher = new(internals_mocks.MockIHasher)
+	s.mockJwt = new(internals_mocks.MockIJwt)
 	s.mockUserDao = new(dao_mocks.MockIUserDao)
 
-	s.userService = services.NewUserService(s.mockHasher, s.mockAuth0, s.mockJwt, s.mockConnectionDao, s.mockUserDao)
+	s.userService = services.NewUserService(s.mockHasher, s.mockJwt, s.mockUserDao)
 }
 
 func (s *UserServiceSuite) TearDownTest() {
 	s.mockHasher.AssertExpectations(s.T())
-	s.mockAuth0.AssertExpectations(s.T())
 	s.mockJwt.AssertExpectations(s.T())
-	s.mockConnectionDao.AssertExpectations(s.T())
 	s.mockUserDao.AssertExpectations(s.T())
 }
 
@@ -61,7 +55,7 @@ func (s *UserServiceSuite) TestLoginUser_SuccessfulLogin() {
 
 	s.mockUserDao.On("GetUser", types.GetUserArgs{Email: &email}).Return(mockUser, nil)
 	s.mockHasher.On("PasswordIsCorrect", hashedPassword, password).Return(true)
-	s.mockJwt.On("GenerateJWT", userId).Return(&lib.AuthTokens{
+	s.mockJwt.On("GenerateJWT", userId).Return(&internals.AuthTokens{
 		AccessToken:  "access_token",
 		RefreshToken: "refresh_token",
 	}, nil)
@@ -139,7 +133,7 @@ func (s *UserServiceSuite) TestRegisterUser_SuccessfulRegistration() {
 
 	s.mockHasher.On("HashPassword", password).Return(hashedPassword)
 	s.mockUserDao.On("CreateUser", mock.Anything).Return(mockUser, nil)
-	s.mockJwt.On("GenerateJWT", userId).Return(&lib.AuthTokens{
+	s.mockJwt.On("GenerateJWT", userId).Return(&internals.AuthTokens{
 		AccessToken:  "access_token",
 		RefreshToken: "refresh_token",
 	}, nil)
@@ -221,8 +215,8 @@ func (s *UserServiceSuite) TestRefreshAccessToken_SuccessfulTokenRefresh() {
 		},
 	}
 
-	s.mockJwt.On("VerifyJWT", refreshToken, lib.REFRESH_TOKEN_TYPE).Return(claims, nil)
-	s.mockJwt.On("GenerateJWT", userId).Return(&lib.AuthTokens{
+	s.mockJwt.On("VerifyJWT", refreshToken, internals.REFRESH_TOKEN_TYPE).Return(claims, nil)
+	s.mockJwt.On("GenerateJWT", userId).Return(&internals.AuthTokens{
 		AccessToken:  "new_access_token",
 		RefreshToken: "new_refresh_token",
 	}, nil)
@@ -233,49 +227,6 @@ func (s *UserServiceSuite) TestRefreshAccessToken_SuccessfulTokenRefresh() {
 	s.NotNil(result)
 	s.Equal("new_access_token", result.Tokens.AccessToken)
 	s.Equal("new_refresh_token", result.Tokens.RefreshToken)
-}
-
-func (s *UserServiceSuite) TestAuthSocialConnection_SuccessfulSocialConnection() {
-	userId := "user123"
-	email := "socialuser@example.com"
-
-	claims := &lib.Auth0TokenClaims{
-		RegisteredClaims: struct {
-			Iss string   "json:\"iss\""
-			Sub string   "json:\"sub\""
-			Aud []string "json:\"aud\""
-			Exp int64    "json:\"exp\""
-			Iat int64    "json:\"iat\""
-		}{
-			Sub: "social|user",
-		},
-		CustomClaims: lib.CustomClaims{
-			Auth0UserInfo: lib.Auth0UserInfo{
-				GivenName:  "John",
-				FamilyName: "Doe",
-				Email:      email,
-			},
-		},
-	}
-
-	s.mockAuth0.On("GetTokenClaims", mock.Anything).Return(claims, nil)
-	s.mockConnectionDao.On("ListConnections", mock.Anything).Return([]db.SocialConnectionModel{}, nil)
-	s.mockUserDao.On("GetUser", types.GetUserArgs{Email: &email}).Return(nil, nil)
-	s.mockUserDao.On("CreateUser", mock.Anything).Return(&db.UserModel{InnerUser: db.InnerUser{ID: userId}}, nil)
-	s.mockConnectionDao.On("CreateConnection", mock.Anything).Return(&db.SocialConnectionModel{}, nil)
-	s.mockJwt.On("GenerateJWT", userId).Return(&lib.AuthTokens{
-		AccessToken:  "access_token",
-		RefreshToken: "refresh_token",
-	}, nil)
-
-	result, err := s.userService.AuthSocialConnection(types.Auth0UserArgs{
-		Token: "social_token",
-	})
-
-	s.NoError(err)
-	s.NotNil(result)
-	s.Equal("access_token", result.Tokens.AccessToken)
-	s.Equal("refresh_token", result.Tokens.RefreshToken)
 }
 
 func TestUserService(t *testing.T) {

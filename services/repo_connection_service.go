@@ -4,10 +4,10 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v3"
-	"pkg.formatio/dao"
-	"pkg.formatio/lib"
-	"pkg.formatio/prisma/db"
-	"pkg.formatio/types"
+	"github.com/struckchure/idp/dao"
+	"github.com/struckchure/idp/internals"
+	"github.com/struckchure/idp/prisma/db"
+	"github.com/struckchure/idp/types"
 )
 
 type RepoConnectionService struct {
@@ -20,7 +20,7 @@ type RepoConnectionService struct {
 func (r *RepoConnectionService) ListRepoConnections(args types.ListRepoConnectionArgs) (repoConnections []db.RepoConnectionModel, err error) {
 	repoConnections, err = r.repoConnectionDAO.ListRepoConnections(args)
 	if err != nil {
-		return nil, lib.TranslateDAOError(err)
+		return nil, internals.TranslateDAOError(err)
 	}
 
 	return repoConnections, nil
@@ -32,7 +32,7 @@ func (r *RepoConnectionService) CreateRepoConnection(args types.CreateRepoConnec
 		types.ListGithubAccountConnectionsArgs{UserId: &args.UserId},
 	)
 	if err != nil {
-		return nil, lib.TranslateDAOError(err)
+		return nil, internals.TranslateDAOError(err)
 	}
 
 	if len(githubAccountConnection) == 0 {
@@ -41,7 +41,7 @@ func (r *RepoConnectionService) CreateRepoConnection(args types.CreateRepoConnec
 
 	repoConnection, err := r.repoConnectionDAO.CreateRepoConnection(args)
 	if err != nil {
-		return nil, lib.TranslateDAOError(err)
+		return nil, internals.TranslateDAOError(err)
 	}
 
 	installationId, _ := githubAccountConnection[0].GithubInstallationID()
@@ -66,7 +66,7 @@ func (r *RepoConnectionService) CreateRepoConnection(args types.CreateRepoConnec
 func (r *RepoConnectionService) GetRepoConnection(args types.GetRepoConnectionArgs) (repoConnection *db.RepoConnectionModel, err error) {
 	repoConnection, err = r.repoConnectionDAO.GetRepoConnection(args)
 	if err != nil {
-		return nil, lib.TranslateDAOError(err)
+		return nil, internals.TranslateDAOError(err)
 	}
 
 	return repoConnection, nil
@@ -76,7 +76,7 @@ func (r *RepoConnectionService) GetRepoConnection(args types.GetRepoConnectionAr
 func (r *RepoConnectionService) UpdateRepoConnection(args types.UpdateRepoConnectionArgs) (repoConnection *db.RepoConnectionModel, err error) {
 	repoConnection, err = r.repoConnectionDAO.UpdateRepoConnection(args)
 	if err != nil {
-		return nil, lib.TranslateDAOError(err)
+		return nil, internals.TranslateDAOError(err)
 	}
 
 	return repoConnection, nil
@@ -86,7 +86,7 @@ func (r *RepoConnectionService) UpdateRepoConnection(args types.UpdateRepoConnec
 func (r *RepoConnectionService) DeleteRepoConnection(args types.DeleteRepoConnectionArgs) (err error) {
 	err = r.repoConnectionDAO.DeleteRepoConnection(args)
 	if err != nil {
-		return lib.TranslateDAOError(err)
+		return internals.TranslateDAOError(err)
 	}
 
 	return nil

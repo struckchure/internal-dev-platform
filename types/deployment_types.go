@@ -1,8 +1,8 @@
 package types
 
 import (
-	"pkg.formatio/lib"
-	"pkg.formatio/prisma/db"
+	"github.com/struckchure/idp/internals"
+	"github.com/struckchure/idp/prisma/db"
 )
 
 const (
@@ -14,7 +14,7 @@ const (
 )
 
 type ListDeploymentArgs struct {
-	lib.BaseListFilterArgs
+	internals.BaseListFilterArgs
 
 	MachineId        *string `query:"machineId"`
 	RepoConnectionId *string `query:"repoConnectionId" swag-validate:"optional"`
@@ -47,7 +47,7 @@ type DeleteDeploymentArgs struct {
 }
 
 type ListDeploymentLogArgs struct {
-	lib.BaseListFilterArgs
+	internals.BaseListFilterArgs
 
 	DeploymentId *string
 	JobId        *string
