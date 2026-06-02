@@ -35,6 +35,7 @@ cp .env.sample .env
 - `RABBITMQ_URL`
 - `REDIS_URL`
 - `GH_APP_SLUG`, `GH_APP_ID`, `GH_APP_CLIENT_ID`, `GH_APP_CLIENT_SECRET`, `GH_PRIVATE_KEY`
+- `GH_APP_REDIRECT_URL` (must match your GitHub App callback URL exactly, including trailing slash; default `http://localhost:3000/api/v1/callback/github/`)
 - `DEFAULT_ADMIN_EMAIL`, `DEFAULT_ADMIN_PASS`
 - `K8S_CLUSTER_CONFIG`
 - `INGRESS_ROOT_DOMAIN`
@@ -77,7 +78,7 @@ The WebSocket server listens on `0.0.0.0:${SOCKET_PORT}`.
 
 ## API Monitor TUI
 
-Interactive terminal client (Charm [Bubble Tea](https://github.com/charmbracelet/bubbletea)) for exercising the API like a frontend:
+Interactive terminal client ([Charm Bubble Tea](https://github.com/charmbracelet/bubbletea) + [huh](https://github.com/charmbracelet/huh)) under `cmd/tui`:
 
 ```bash
 go run ./cmd/tui
@@ -85,13 +86,39 @@ go run ./cmd/tui
 
 Defaults: HTTP `http://localhost:3000`, WebSocket `ws://localhost:9090/ws`.
 
-### Quick start
+**The TUI is a complete, end-to-end integration reference for how clients should use the idp API.** It exercises the same REST routes, auth flow, GitHub linking, repo connections, deployments, and WebSocket channels that a production frontend would—use it as the canonical map of API usage when building your own client.
+
+### What it covers
+
+| Section | Operations |
+|---------|------------|
+| **Auth+User** | Register, login, refresh, logout, profile read/update |
+| **Machine+Network** | Machines CRUD (create uses an interactive form), networks list/create/delete |
+| **Repo+Deploy** | Repo connections CRUD, list deployments, deploy, deployment detail/logs |
+| **GitHub** | List repos, authorize account, update app access, list account connections |
+| **WebSocket** | Subscribe / disconnect from event channels |
+
+Interactive forms (no raw JSON for common flows) include machine create, network create, repo connection create/update, and deploy repo—with scrollable selects for machines and GitHub repos where applicable.
+
+### Auth and tokens
+
+- After login or register, access and refresh tokens are saved to `~/.idp-tui-auth.json` and sent as `Authorization: Bearer …` on protected routes.
+- On login, the TUI auto-subscribes to `deployment-log-stream-event`.
+- **Deploy Repo** also auto-subscribes and streams deployment log **messages** in the output panel (log text only, not raw WebSocket JSON).
+
+Press **`o`** to open links returned by the API (for example GitHub authorize URLs).
+
+### Typical workflow
 
 1. Start the API and dependencies (see above).
-2. In the TUI, stay on **Auth+User** and select **Login**.
-3. **A** = email, **B** = password, press **Enter**.
-4. Tokens are stored in memory automatically; all protected routes send `Authorization: Bearer …`.
-5. After login, the TUI auto-subscribes to `deployment-log-stream-event` and streams messages in the output panel.
+2. **Auth+User → Login** (default admin from `.env`: `admin@idp.local` / `admin123`).
+3. **GitHub → Authorize Account Link**, then press **`o`** to complete OAuth in the browser.
+4. **Machine+Network → Create Machine** — pick `struckchure/alpine` or `struckchure/ubuntu` (required base images with git/SSH for deploy).
+5. **Repo+Deploy → Create Repo Connection** — select machine + GitHub repo.
+6. Ensure the target repo has a workflow file at `.formatio/action.yaml` or `.idp/action.yaml` (Storm/GitHub Actions-style `jobs` are supported).
+7. **Repo+Deploy → Deploy Repo** — select machine, repo connection, optional git ref; watch logs stream in the output panel.
+
+Machines must finish provisioning (non-empty `containerId` in the database / K8s deployment exists) before deploy will succeed.
 
 ### Controls
 
@@ -99,13 +126,25 @@ Defaults: HTTP `http://localhost:3000`, WebSocket `ws://localhost:9090/ws`.
 |-----|--------|
 | `shift+←` / `shift+→` | Previous / next section tab |
 | `↑` / `↓` | Select action in the current section |
-| `tab` / `shift+tab` | Next / previous input (A → B → JSON → HTTP → WS) |
-| `enter` | Run selected action |
+| `tab` / `shift+tab` | Next / previous config field (HTTP ↔ WS) or form field |
+| `↑` / `↓` (in selects) | Browse dropdown options |
+| `enter` | Run selected action / submit interactive form |
+| `ctrl+s` | Force-submit current form |
+| `o` | Open latest link from API output |
 | `?` | Toggle in-app usage guide |
 | `ctrl+l` | Clear output |
-| `q` | Quit |
+| `q` / `ctrl+c` | Quit |
 
 Press `?` inside the TUI for the full guide, including WebSocket event names.
+
+### Machine images
+
+Only these container images are accepted when creating a machine:
+
+- `struckchure/alpine` (default in the TUI)
+- `struckchure/ubuntu`
+
+Other images are rejected by the API with `400`.
 
 ## Helpful Task Commands
 
@@ -122,10 +161,16 @@ task doc:generate        # regenerate swagger docs
 
 ## Testing
 
-Run service tests:
+Run service and internals tests:
 
 ```bash
-go test ./services -v
+go test ./services/... ./internals/... -v
+```
+
+Run TUI UI tests:
+
+```bash
+go test ./cmd/tui/ui/... -v
 ```
 
 Run unit tests directory:
@@ -152,10 +197,12 @@ Base path: `/api/v1`
 ### Machines
 
 - `GET /machine/`
-- `POST /machine/`
+- `POST /machine/` — body includes `machineName`, `cpu`, `memory`, `machineImage` (`struckchure/alpine` or `struckchure/ubuntu`)
 - `GET /machine/:machineId`
 - `PATCH /machine/:machineId`
 - `DELETE /machine/:machineId`
+
+Machine create is async (RabbitMQ `create-machine-queue`); provisioning sets `containerId` to the K8s deployment name when ready.
 
 ### Networks
 
@@ -182,14 +229,18 @@ Note: repo connection detail/update/delete routes currently do not include a `/`
 
 ### Deployments
 
+Deploy enqueues async work on `deployment-deploy-repo-queue`. The worker clones the repo, reads `.formatio/action.yaml` or `.idp/action.yaml`, runs Storm on the machine’s K8s pods, and publishes logs to `deployment-log-stream-event`.
+
 - `GET /deployments/`
-- `POST /deployments/deploy`
+- `POST /deployments/deploy` — body: `{ "connectionId": "...", "ref": "main" }` (optional `ref`)
 - `GET /deployments/:deploymentId`
 - `GET /deployments/:deploymentId/logs`
 
 ### Callback
 
-- `GET /callback/github/`
+- `GET /callback/github/` — GitHub OAuth callback (302 redirect); `state` and `code` query params
+
+Set `GH_APP_REDIRECT_URL` in `.env` to this URL and register the same URL on your GitHub App.
 
 ### Webhook
 
@@ -205,15 +256,29 @@ ws://localhost:${SOCKET_PORT}/ws?event=<event-name>
 
 Current event channels:
 
-- `deployment-notification-event/<machineId>`
-- `deployment-log-stream-event`
+- `deployment-log-stream-event` — deployment log lines (WebSocket payload: `{ "event", "content" }` where `content.message` is the log text)
+- `deployment-notification-event/<machineId>` — deployment lifecycle notifications
+
+Log messages are also available via `GET /deployments/:deploymentId/logs`.
 
 ## Production Docker Build
 
+Build the image (no secrets baked in at build time):
+
 ```bash
-docker build -t idp . \
-  --target production \
-  --build-arg infisical_token=<infisical_token> \
-  --build-arg infisical_project_id=<infisical_project_id> \
-  --build-arg infisical_env=<infisical_env>
+docker build -t idp .
 ```
+
+Run with your own environment (for example from `.env`):
+
+```bash
+docker run --rm -p 3000:3000 -p 9090:9090 --env-file .env idp
+```
+
+Apply database migrations before or alongside the first deploy (requires `DATABASE_URL` from the same env file):
+
+```bash
+go run github.com/steebchen/prisma-client-go migrate deploy
+```
+
+Or run migrations from a one-off container that mounts the same `--env-file` if you add a migrate entrypoint later.

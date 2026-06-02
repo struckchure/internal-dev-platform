@@ -1,35 +1,25 @@
-FROM golang:1.22.3-alpine
+FROM golang:1.25.1-alpine AS builder
 
-RUN apk update && apk add --no-cache curl bash sudo aws-cli
+RUN apk add --no-cache git
 
-RUN curl -1sLf 'https://dl.cloudsmith.io/public/infisical/infisical-cli/setup.alpine.sh' | sudo -E codename=v3.9 bash
+WORKDIR /code
 
-RUN apk update && sudo apk add infisical
-
-WORKDIR /code/
+COPY go.mod go.sum ./
+RUN go mod download
 
 COPY . .
 
-ENV GOOS=linux
-ENV GOARCH=amd64
-
-ARG infisical_token
-ARG infisical_project_id
-ARG infisical_env
-
-ARG aws_access_key_id
-ARG aws_secret_access_key
-
-RUN aws configure set aws_access_key_id ${aws_access_key_id}
-RUN aws configure set aws_secret_access_key ${aws_secret_access_key}
-
-ENV INFISICAL_TOKEN=${infisical_token}
-RUN infisical export --projectId=${infisical_project_id} --env=${infisical_env} --format=dotenv > .env
-
-RUN source .env && go run github.com/steebchen/prisma-client-go migrate deploy
 RUN go run github.com/steebchen/prisma-client-go generate
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o main .
 
-RUN go mod tidy
-RUN go build -o main
+FROM alpine:3.20
 
-CMD [ "./main" ]
+RUN apk add --no-cache ca-certificates tzdata
+
+WORKDIR /app
+
+COPY --from=builder /code/main .
+
+EXPOSE 3000 9090
+
+CMD ["./main"]
