@@ -2,12 +2,15 @@ package services
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -58,6 +61,13 @@ type GithubService struct {
 	deploymentDAO              dao.IDeploymentDao
 	deploymentLogService       *DeploymentLogService
 	githubAccountConnectionDAO dao.IGithubAccountConnectionDao
+}
+
+const oauthStatePrefix = "gh-oauth-state:"
+
+type oauthStatePayload struct {
+	UserID      string `json:"userId"`
+	RedirectURL string `json:"redirectUrl"`
 }
 
 func (g *GithubService) DeployRepoHandler(args types.DeployRepoArgs) error {
@@ -501,14 +511,51 @@ func (g *GithubService) ListRepositories(args types.ListRepositoriesArgs) ([]typ
 }
 
 func (g *GithubService) AuthorizeGithubAccount(args types.AuthorizeGithubAccountArgs) (string, error) {
-	link := fmt.Sprintf("https://github.com/login/oauth/authorize?client_id=%s&login=&state=%s", g.env.GH_APP_CLIENT_ID, args.UserId)
+	stateToken, err := generateOAuthStateToken()
+	if err != nil {
+		return "", err
+	}
 
-	g.redis.SetItem(args.UserId, args.RedirectUrl)
+	statePayload, err := json.Marshal(oauthStatePayload{
+		UserID:      args.UserId,
+		RedirectURL: args.RedirectUrl,
+	})
+	if err != nil {
+		return "", err
+	}
 
-	return link, nil
+	if err := g.redis.SetItem(oauthStatePrefix+stateToken, string(statePayload)); err != nil {
+		return "", err
+	}
+
+	return g.buildAuthorizeLink(stateToken), nil
 }
 
 func (g *GithubService) ConnectGithubAccount(args types.ConnectGithubAccountArgs) (*string, error) {
+	stateRaw, err := g.redis.GetItem(oauthStatePrefix + args.State)
+	if err != nil {
+		return nil, internals.HttpError{
+			Message:    "invalid or expired oauth state. please retry authorization.",
+			StatusCode: http.StatusBadRequest,
+		}
+	}
+	_ = g.redis.DeleteItem(oauthStatePrefix + args.State)
+
+	var state oauthStatePayload
+	if err := json.Unmarshal([]byte(*stateRaw), &state); err != nil {
+		return nil, internals.HttpError{
+			Message:    "invalid oauth state payload. please retry authorization.",
+			StatusCode: http.StatusBadRequest,
+		}
+	}
+
+	if state.UserID == "" {
+		return nil, internals.HttpError{
+			Message:    "invalid oauth state user. please retry authorization.",
+			StatusCode: http.StatusBadRequest,
+		}
+	}
+
 	token, err := g.exchangeCodeForToken(args.Code)
 	if err != nil {
 		return nil, err
@@ -556,7 +603,7 @@ func (g *GithubService) ConnectGithubAccount(args types.ConnectGithubAccountArgs
 
 	_, err = g.githubAccountConnectionDAO.CreateConnection(
 		types.CreateGithubAccountConnectionArgs{
-			UserId:               args.UserId,
+			UserId:               state.UserID,
 			GithubId:             strconv.Itoa(user.Id),
 			GithubInstallationId: lo.ToPtr(int(*installation.ID)),
 			GithubEmail:          user.Email,
@@ -574,14 +621,11 @@ func (g *GithubService) ConnectGithubAccount(args types.ConnectGithubAccountArgs
 		}
 	}
 
-	redirectUrl, err := g.redis.GetItem(args.UserId)
-	if err != nil {
-		return nil, err
+	redirectURL := strings.TrimSpace(state.RedirectURL)
+	if redirectURL == "" {
+		redirectURL = "/"
 	}
-
-	g.redis.DeleteItem(args.UserId)
-
-	return redirectUrl, nil
+	return &redirectURL, nil
 }
 
 func (g *GithubService) UpdateAppAccess(args types.AuthorizeGithubAccountArgs) (*string, error) {
@@ -752,22 +796,63 @@ func (g *GithubService) getFileFromRepo(args types.GetFileFromRepoArgs) (*string
 }
 
 func (g *GithubService) exchangeCodeForToken(code string) (*oauth2.Token, error) {
-	config := oauth2.Config{
+	config := g.oauthConfig()
+
+	// Exchange the code for a token
+	token, err := config.Exchange(context.TODO(), code)
+	if err != nil {
+		mapped := mapOAuthExchangeError(err)
+		log.Printf("github oauth code exchange failed: %v", mapped)
+		return nil, mapped
+	}
+
+	return token, nil
+}
+
+func (g *GithubService) buildAuthorizeLink(state string) string {
+	values := url.Values{}
+	values.Set("client_id", g.env.GH_APP_CLIENT_ID)
+	values.Set("state", state)
+	values.Set("login", "")
+	values.Set("redirect_uri", g.env.GH_APP_REDIRECT_URL)
+
+	return "https://github.com/login/oauth/authorize?" + values.Encode()
+}
+
+func (g *GithubService) oauthConfig() oauth2.Config {
+	return oauth2.Config{
 		ClientID:     g.env.GH_APP_CLIENT_ID,
 		ClientSecret: g.env.GH_APP_CLIENT_SECRET,
+		RedirectURL:  g.env.GH_APP_REDIRECT_URL,
 		Endpoint: oauth2.Endpoint{
 			AuthURL:  "https://github.com/login/oauth/authorize",
 			TokenURL: "https://github.com/login/oauth/access_token",
 		},
 	}
+}
 
-	// Exchange the code for a token
-	token, err := config.Exchange(context.TODO(), code)
-	if err != nil {
-		return nil, err
+func mapOAuthExchangeError(err error) error {
+	msg := err.Error()
+	if strings.Contains(msg, "bad_verification_code") {
+		return internals.HttpError{
+			Message:    "github authorization code is invalid or expired. please re-authorize and try again.",
+			StatusCode: http.StatusBadRequest,
+		}
 	}
 
-	return token, nil
+	return internals.HttpError{
+		Message:    "github oauth token exchange failed.",
+		StatusCode: http.StatusBadRequest,
+	}
+}
+
+func generateOAuthStateToken() (string, error) {
+	b := make([]byte, 16)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+
+	return hex.EncodeToString(b), nil
 }
 
 func (g *GithubService) publishDeploymentLog(args types.CreateDeploymentLogArgs) error {

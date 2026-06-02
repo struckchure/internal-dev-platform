@@ -19,6 +19,7 @@ type Env struct {
 	GH_APP_CLIENT_ID     string
 	GH_APP_CLIENT_SECRET string
 	GH_PRIVATE_KEY       string
+	GH_APP_REDIRECT_URL  string
 
 	DEFAULT_ADMIN_EMAIL string
 	DEFAULT_ADMIN_PASS  string
@@ -52,6 +53,7 @@ func NewEnv() Env {
 		GH_APP_CLIENT_ID:     secrets.GetOrPanic("GH_APP_CLIENT_ID"),
 		GH_APP_CLIENT_SECRET: secrets.GetOrPanic("GH_APP_CLIENT_SECRET"),
 		GH_PRIVATE_KEY:       secrets.GetOrPanic("GH_PRIVATE_KEY"),
+		GH_APP_REDIRECT_URL:  UseDefault(secrets.Get("GH_APP_REDIRECT_URL"), "http://localhost:3000/api/v1/callback/github/"),
 
 		DEFAULT_ADMIN_EMAIL: secrets.GetOrPanic("DEFAULT_ADMIN_EMAIL"),
 		DEFAULT_ADMIN_PASS:  secrets.GetOrPanic("DEFAULT_ADMIN_PASS"),

@@ -86,8 +86,8 @@ type AuthorizeGithubAccountArgs struct {
 }
 
 type ConnectGithubAccountArgs struct {
-	UserId string `json:"userId"`
-	Code   string `json:"code"`
+	State string `json:"state"`
+	Code  string `json:"code"`
 }
 
 type ListBranchesArgs struct {

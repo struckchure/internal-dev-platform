@@ -18,18 +18,18 @@ type CallbackHandler struct {
 
 // GithubCallbackHandler implements CallbackHandlerInterface.
 func (w *CallbackHandler) GithubCallbackHandler(c fiber.Ctx) error {
-	userId := fiber.Query[string](c, "state")
+	state := fiber.Query[string](c, "state")
 	code := fiber.Query[string](c, "code")
 
 	redirectUrl, err := w.githubService.ConnectGithubAccount(types.ConnectGithubAccountArgs{
-		UserId: userId,
-		Code:   code,
+		State: state,
+		Code:  code,
 	})
 	if err != nil {
 		return internals.TranslateHandlerError(c, err)
 	}
 
-	return c.Redirect().Status(fiber.StatusMovedPermanently).To(*redirectUrl)
+	return c.Redirect().Status(fiber.StatusFound).To(*redirectUrl)
 }
 
 func NewCallbackHandler(githubService services.IGithubService) ICallbackHandler {
