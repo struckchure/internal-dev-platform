@@ -7,8 +7,9 @@ const usageGuide = `idp API Monitor — Quick Guide
 3) Fill the login form fields and submit with Enter.
    • Access + refresh tokens are stored in memory automatically.
    • WebSocket auto-subscribes to deployment-log-stream-event.
-4) Machine+Network → Create Machine opens an interactive form (name, CPU, memory, image).
+4) Machine+Network → Create Machine opens an interactive form (name, CPU, memory, image: struckchure/alpine or struckchure/ubuntu).
    • Create Network, Repo Connection, and Deploy Repo use machine/repo dropdowns.
+   • Deploy Repo auto-subscribes and streams deployment logs in the output panel.
 5) Use other tabs for deployments, GitHub, etc.
    • Authenticated requests send Authorization: Bearer <token>.
 

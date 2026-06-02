@@ -3,6 +3,7 @@ package services
 import (
 	"strconv"
 
+	"github.com/gofiber/fiber/v3"
 	"github.com/google/go-github/v56/github"
 	"github.com/samber/lo"
 	"github.com/struckchure/idp/dao"
@@ -16,6 +17,7 @@ type DeploymentService struct {
 	deploymentLogDAO           dao.IDeploymentLogDao
 	repoConnectionDao          dao.IRepoConnectionDao
 	githubAccountConnectionDao dao.IGithubAccountConnectionDao
+	machineDAO                 dao.IMachineDao
 	githubService              IGithubService
 }
 
@@ -128,6 +130,14 @@ func (s *DeploymentService) DeployRepo(args DeployRepoArgs) error {
 		return err
 	}
 
+	machine, err := s.machineDAO.GetMachine(types.GetMachineArgs{Id: &repoConnection.MachineID})
+	if err != nil {
+		return internals.TranslateDAOError(err)
+	}
+	if _, err := MachineDeploymentName(machine); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+
 	repoFullName, _ := repoConnection.RepoName()
 	_repoId, _ := repoConnection.RepoID()
 	repoId, _ := strconv.Atoi(_repoId)
@@ -147,6 +157,7 @@ func NewDeploymentService(
 	deploymentLogDAO dao.IDeploymentLogDao,
 	repoConnectionDao dao.IRepoConnectionDao,
 	githubAccountConnectionDao dao.IGithubAccountConnectionDao,
+	machineDAO dao.IMachineDao,
 	githubService IGithubService,
 ) *DeploymentService {
 	return &DeploymentService{
@@ -154,6 +165,7 @@ func NewDeploymentService(
 		deploymentLogDAO:           deploymentLogDAO,
 		repoConnectionDao:          repoConnectionDao,
 		githubAccountConnectionDao: githubAccountConnectionDao,
+		machineDAO:                 machineDAO,
 		githubService:              githubService,
 	}
 }

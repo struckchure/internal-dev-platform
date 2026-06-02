@@ -1,9 +1,6 @@
 package types
 
-import (
-	storm "github.com/Overal-X/formatio.storm"
-	"github.com/struckchure/idp/internals"
-)
+import "github.com/struckchure/idp/internals"
 
 type Repository struct {
 	ID       int    `json:"id"`
@@ -68,7 +65,7 @@ type Action struct {
 		} `yaml:"push"`
 	} `yaml:"on"`
 
-	Jobs []storm.Job `yaml:"jobs"`
+	Jobs ActionJobs `yaml:"jobs"`
 }
 
 type ExecuteActionArgs struct {

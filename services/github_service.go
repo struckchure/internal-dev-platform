@@ -22,7 +22,6 @@ import (
 	"golang.org/x/oauth2"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/storage/memory"
-	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 
 	"github.com/struckchure/idp/dao"
@@ -47,7 +46,7 @@ type IGithubService interface {
 	generateCloneUrl(string, string) string
 	generateJwt() (*string, error)
 	getFileFromRepo(types.GetFileFromRepoArgs) (*string, error)
-	parseAction(string) (*types.Action, error)
+	parseAction(string, string) (*types.Action, error)
 	publishDeploymentLog(types.CreateDeploymentLogArgs) error
 }
 
@@ -72,29 +71,12 @@ type oauthStatePayload struct {
 
 func (g *GithubService) DeployRepoHandler(args types.DeployRepoArgs) error {
 	repoId := strconv.Itoa(args.RepoId)
-	var userId *string
 
+	listConnArgs := types.ListRepoConnectionArgs{RepoId: &repoId}
 	if args.MachineId != "" {
-		githubConnections, err := g.githubAccountConnectionDAO.ListConnections(types.ListGithubAccountConnectionsArgs{
-			InstallationId: &args.InstallationId,
-		})
-		if err != nil {
-			return nil
-		}
-
-		if len(githubConnections) == 0 {
-			return errors.New("no github account connection found")
-		}
-
-		userId = &githubConnections[0].UserID
+		listConnArgs.MachineId = &args.MachineId
 	}
-
-	fmt.Println("userId: ", userId)
-	repoConnections, err := g.repoConnectionDao.ListRepoConnections(types.ListRepoConnectionArgs{
-		RepoId: &repoId,
-		// MachineId: &args.MachineId,
-		// OwnerId:   userId,
-	})
+	repoConnections, err := g.repoConnectionDao.ListRepoConnections(listConnArgs)
 	if err != nil {
 		log.Println(err)
 
@@ -113,6 +95,11 @@ func (g *GithubService) DeployRepoHandler(args types.DeployRepoArgs) error {
 	if err != nil {
 		log.Println(err)
 
+		return err
+	}
+
+	deploymentName, err := MachineDeploymentName(machine)
+	if err != nil {
 		return err
 	}
 
@@ -145,21 +132,16 @@ func (g *GithubService) DeployRepoHandler(args types.DeployRepoArgs) error {
 
 	cloneURL := g.generateCloneUrl(args.RepoFullName, *accessToken)
 
-	actionFileContent, err := g.getFileFromRepo(
-		types.GetFileFromRepoArgs{
-			RepoURL:  cloneURL,
-			FilePath: ".formatio/action.yaml",
-		},
-	)
+	actionFileContent, actionPath, err := g.loadActionFile(cloneURL)
 	if err != nil {
 		log.Println(err)
 
 		return nil
 	}
 
-	actionConfig, err := g.parseAction(*actionFileContent)
+	actionConfig, err := g.parseAction(*actionFileContent, actionPath)
 	if err != nil {
-		return errors.Join(errors.New("could not parse action configuration"), err)
+		return err
 	}
 
 	deployment, err := g.deploymentDAO.CreateDeployment(types.CreateDeploymentArgs{
@@ -189,9 +171,9 @@ func (g *GithubService) DeployRepoHandler(args types.DeployRepoArgs) error {
 		log.Println("publishing to DEPLOYMENT_NOTIFICATION_EVENT: ", err)
 	}
 
-	deploymentPods, err := g.containerManager.ListDeploymentPods(lo.Must(machine.ContainerID()))
+	deploymentPods, err := g.containerManager.ListDeploymentPods(deploymentName)
 	if err != nil {
-		return err
+		return g.failDeployment(deployment.ID, "pre-job.List pods", err.Error())
 	}
 
 	agent := storm.NewAgent()
@@ -269,8 +251,8 @@ func (g *GithubService) DeployRepoHandler(args types.DeployRepoArgs) error {
 
 	logCallback := func(i any) {
 		stringPayload := i.(string)
-		stringPayloadLines := strings.Split(stringPayload, "\n")
-		for _, line := range stringPayloadLines {
+		stringPayloadLines := strings.SplitSeq(stringPayload, "\n")
+		for line := range stringPayloadLines {
 			stepOutput := storm.WorkflowStepOutputStruct{}
 			err := json.Unmarshal([]byte(line), &stepOutput)
 			if err != nil {
@@ -354,7 +336,7 @@ func (g *GithubService) DeployRepoHandler(args types.DeployRepoArgs) error {
 	wc := storm.WorkflowConfig{
 		Name:      actionConfig.Name,
 		Directory: "/home/formatio/code",
-		Jobs:      actionConfig.Jobs,
+		Jobs:      []storm.Job(actionConfig.Jobs),
 	}
 	// TODO: check storm version on remove machine matches local
 	// TODO: add agent's callback func for logs
@@ -855,6 +837,22 @@ func generateOAuthStateToken() (string, error) {
 	return hex.EncodeToString(b), nil
 }
 
+func (g *GithubService) failDeployment(deploymentID, jobID, message string) error {
+	_ = g.publishDeploymentLog(types.CreateDeploymentLogArgs{
+		DeploymentId: deploymentID,
+		JobId:        jobID,
+		Message:      message,
+	})
+	_, updateErr := g.deploymentDAO.UpdateDeployment(types.UpdateDeploymentArgs{
+		Id:     deploymentID,
+		Status: lo.ToPtr(db.DeploymentStatusFailed),
+	})
+	if updateErr != nil {
+		return errors.Join(errors.New(message), updateErr)
+	}
+	return errors.New(message)
+}
+
 func (g *GithubService) publishDeploymentLog(args types.CreateDeploymentLogArgs) error {
 	deploymentLog, err := g.deploymentLogService.CreateDeploymentLog(args)
 	if err != nil {
@@ -877,16 +875,29 @@ func (g *GithubService) publishDeploymentLog(args types.CreateDeploymentLogArgs)
 	return nil
 }
 
-func (g *GithubService) parseAction(content string) (*types.Action, error) {
-	contentBytes := []byte(content)
-
-	// Unmarshal YAML data into the struct
-	var config types.Action
-	if err := yaml.Unmarshal(contentBytes, &config); err != nil {
-		return nil, err
+func (g *GithubService) loadActionFile(cloneURL string) (*string, string, error) {
+	for _, path := range []string{".formatio/action.yaml", ".idp/action.yaml"} {
+		content, err := g.getFileFromRepo(types.GetFileFromRepoArgs{
+			RepoURL:  cloneURL,
+			FilePath: path,
+		})
+		if err == nil && content != nil {
+			return content, path, nil
+		}
 	}
+	return nil, "", errors.New("action file not found at .formatio/action.yaml or .idp/action.yaml")
+}
 
-	return &config, nil
+func (g *GithubService) parseAction(content string, path string) (*types.Action, error) {
+	config, err := types.ParseAction(content)
+	if err != nil {
+		hint := "expected jobs as a list with name/steps, or a map of job names (GitHub Actions style)"
+		if path != "" {
+			return nil, fmt.Errorf("parse %s: %w (%s)", path, err, hint)
+		}
+		return nil, fmt.Errorf("parse action configuration: %w (%s)", err, hint)
+	}
+	return config, nil
 }
 
 func NewGithubService(

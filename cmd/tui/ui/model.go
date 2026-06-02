@@ -84,8 +84,9 @@ type model struct {
 	wsEvent     string
 	wsMessages  []string
 	wsSink      chan string
-	wsConnected bool
-	showHelp    bool
+	wsConnected     bool
+	streamingDeploy bool
+	showHelp        bool
 
 	showMachineForm bool
 	machineForm     *huh.Form
@@ -332,7 +333,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.showActionForm = false
 				m.applyActionFormToInputs()
 				m.applyBases()
-				return m, m.runCurrentOperation()
+				return m, m.beginRunOperation()
 			}
 			if msg.String() == "enter" || msg.String() == "ctrl+m" {
 				form, cmd := m.actionForm.Update(huh.NextField())
@@ -344,7 +345,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.showActionForm = false
 					m.applyActionFormToInputs()
 					m.applyBases()
-					return m, m.runCurrentOperation()
+					return m, m.beginRunOperation()
 				case huh.StateAborted:
 					m.showActionForm = false
 					m.status = "Action cancelled"
@@ -363,7 +364,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.showActionForm = false
 					m.applyActionFormToInputs()
 					m.applyBases()
-					return m, m.runCurrentOperation()
+					return m, m.beginRunOperation()
 				}
 				return m, nil
 			}
@@ -389,7 +390,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.showActionForm = false
 				m.applyActionFormToInputs()
 				m.applyBases()
-				return m, m.runCurrentOperation()
+				return m, m.beginRunOperation()
 			case huh.StateAborted:
 				m.showActionForm = false
 				m.status = "Action cancelled"
@@ -434,6 +435,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if key.Matches(msg, m.keys.Clear) {
 			m.response.SetContent("")
 			m.wsMessages = nil
+			m.streamingDeploy = false
 			m.status = "Cleared"
 			m.showHelp = false
 		}
@@ -462,7 +464,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.showActionForm = true
 				return m, m.actionForm.Init()
 			}
-			return m, m.runCurrentOperation()
+			return m, m.beginRunOperation()
 		}
 	case spinner.TickMsg:
 		m.spin, cmd = m.spin.Update(msg)
@@ -478,9 +480,18 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.wsConnected = false
 			m.wsEvent = ""
 			m.wsMessages = nil
+			m.streamingDeploy = false
 		}
-		m.response.SetContent(msg.body)
-		m.response.GotoTop()
+		if m.streamingDeploy {
+			m.wsMessages = append(m.wsMessages, fmt.Sprintf("[%s] %s", time.Now().Format("15:04:05"), m.deployStatusLine(msg)))
+			m.renderStreamOutput()
+			if msg.err != nil || msg.status >= 400 {
+				m.streamingDeploy = false
+			}
+		} else {
+			m.response.SetContent(msg.body)
+			m.response.GotoTop()
+		}
 		if msg.autoWS && m.api.IsAuthenticated() {
 			cmds = append(cmds, m.subscribeWS(defaultWSEvent))
 		}
@@ -494,12 +505,16 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.wsConnected = true
 			m.wsEvent = msg.event
 			m.status = successStyle.Render("WebSocket subscribed: " + msg.event)
+			if m.streamingDeploy {
+				m.renderStreamOutput()
+			}
 		} else {
 			m.wsConnected = false
 			m.wsEvent = ""
 		}
 	case wsMsg:
-		line := fmt.Sprintf("[%s] %s", time.Now().Format("15:04:05"), string(msg))
+		text := formatWSStreamLine(string(msg))
+		line := fmt.Sprintf("[%s] %s", time.Now().Format("15:04:05"), text)
 		m.wsMessages = append(m.wsMessages, line)
 		if len(m.wsMessages) > 300 {
 			m.wsMessages = m.wsMessages[len(m.wsMessages)-300:]
@@ -679,6 +694,35 @@ func (m *model) subscribeWS(event string) tea.Cmd {
 		err := ws.Subscribe(event, sink)
 		return wsSubscribedMsg{event: event, err: err, connected: err == nil}
 	}
+}
+
+func (m *model) isDeployRepoOp() bool {
+	return m.currentTab() == "Repo+Deploy" && m.opIndex["Repo+Deploy"] == 6
+}
+
+func (m *model) beginRunOperation() tea.Cmd {
+	if m.isDeployRepoOp() {
+		m.streamingDeploy = true
+		m.showHelp = false
+		m.wsMessages = nil
+		m.loading = true
+		m.status = "Deploying..."
+		m.response.SetContent("Deploy started — streaming logs…\n")
+		if m.api.IsAuthenticated() {
+			return tea.Batch(m.subscribeWS(defaultWSEvent), m.runCurrentOperation())
+		}
+	}
+	return m.runCurrentOperation()
+}
+
+func (m *model) deployStatusLine(msg apiResultMsg) string {
+	if msg.err != nil {
+		return "Deploy request failed: " + msg.err.Error()
+	}
+	if msg.status >= 400 {
+		return fmt.Sprintf("Deploy request failed (%d): %s", msg.status, strings.TrimSpace(msg.body))
+	}
+	return "Deploy request accepted — waiting for worker logs…"
 }
 
 func (m *model) runCurrentOperation() tea.Cmd {

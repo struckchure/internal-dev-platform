@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
@@ -208,6 +209,10 @@ func (c *ContainerManager) DeleteContainer(args DeleteContainerArgs) error {
 }
 
 func (c *ContainerManager) ListDeploymentPods(deploymentName string) (*apiv1.PodList, error) {
+	if strings.TrimSpace(deploymentName) == "" {
+		return nil, errors.New("deployment name is required")
+	}
+
 	// Get the Deployment object
 	deployment, err := c.deploymentsClient.Get(context.TODO(), deploymentName, metav1.GetOptions{})
 	if err != nil {

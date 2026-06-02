@@ -2,6 +2,7 @@ package ui
 
 import (
 	"github.com/charmbracelet/huh"
+	"github.com/struckchure/idp/internals"
 )
 
 func (m *model) buildMachineForm() {
@@ -24,11 +25,14 @@ func (m *model) buildMachineForm() {
 			Description("Kubernetes-style memory limit").
 			Placeholder("512Mi").
 			Value(&m.machineMemory),
-		huh.NewInput().
+		huh.NewSelect[string]().
 			Key("machineImage").
 			Title("Container image").
-			Description("Docker image to run on the machine").
-			Placeholder("nginx:alpine").
+			Description("↑/↓ browse · idp base images with git and SSH").
+			Options(
+				huh.NewOption("Alpine (struckchure/alpine)", internals.MachineImageAlpine),
+				huh.NewOption("Ubuntu (struckchure/ubuntu)", internals.MachineImageUbuntu),
+			).
 			Value(&m.machineImage),
 	).Title("Create machine").Description("idp will provision a container with these settings.").WithShowHelp(true)
 
@@ -39,5 +43,5 @@ func (m *model) resetMachineFormDefaults() {
 	m.machineName = ""
 	m.machineCPU = "500m"
 	m.machineMemory = "512Mi"
-	m.machineImage = "nginx:alpine"
+	m.machineImage = internals.DefaultMachineImage()
 }

@@ -7,22 +7,29 @@ on:
       - development
 
 jobs:
-  - build:
+  - name: build
+    runs-on: self-hosted
     steps:
       - name: Build App
         run: echo "build app ..."
 
-  - test:
+  - name: test
+    runs-on: self-hosted
+    needs: build
     steps:
       - name: Test App
         run: echo "testing app ..."
 
-  - deploy:
+  - name: deploy
+    runs-on: self-hosted
+    needs: test
     steps:
       - name: Deploy App
         run: echo "deploying app ..."
 
-  - release:
+  - name: release
+    runs-on: self-hosted
+    needs: deploy
     steps:
       - name: Release App
         run: echo "releasing app ..."

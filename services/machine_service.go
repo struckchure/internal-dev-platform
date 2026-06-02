@@ -49,6 +49,10 @@ func (m *MachineService) ListMachines(args types.ListMachineArgs) (machines []db
 }
 
 func (m *MachineService) CreateMachine(args types.CreateMachineArgs) (*db.MachineModel, error) {
+	if err := internals.ValidateMachineImage(args.MachineImage); err != nil {
+		return nil, fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+
 	machine, err := m.machineDAO.CreateMachine(
 		types.CreateMachineArgs{
 			OwnerId:       args.OwnerId,
@@ -82,6 +86,9 @@ func (m *MachineService) CreateMachineEventHandler(args types.CreateMachineEvent
 
 	machineName, _ := machine.MachineName()
 	machineImage, _ := machine.MachineImage()
+	if err := internals.ValidateMachineImage(machineImage); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
 	cpu, _ := machine.CPU()
 	memory, _ := machine.Memory()
 
