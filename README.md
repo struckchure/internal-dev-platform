@@ -75,6 +75,38 @@ go run .
 The app listens on `0.0.0.0:${APP_PORT}`.
 The WebSocket server listens on `0.0.0.0:${SOCKET_PORT}`.
 
+## API Monitor TUI
+
+Interactive terminal client (Charm [Bubble Tea](https://github.com/charmbracelet/bubbletea)) for exercising the API like a frontend:
+
+```bash
+go run ./cmd/tui
+```
+
+Defaults: HTTP `http://localhost:3000`, WebSocket `ws://localhost:9090/ws`.
+
+### Quick start
+
+1. Start the API and dependencies (see above).
+2. In the TUI, stay on **Auth+User** and select **Login**.
+3. **A** = email, **B** = password, press **Enter**.
+4. Tokens are stored in memory automatically; all protected routes send `Authorization: Bearer …`.
+5. After login, the TUI auto-subscribes to `deployment-log-stream-event` and streams messages in the output panel.
+
+### Controls
+
+| Key | Action |
+|-----|--------|
+| `shift+←` / `shift+→` | Previous / next section tab |
+| `↑` / `↓` | Select action in the current section |
+| `tab` / `shift+tab` | Next / previous input (A → B → JSON → HTTP → WS) |
+| `enter` | Run selected action |
+| `?` | Toggle in-app usage guide |
+| `ctrl+l` | Clear output |
+| `q` | Quit |
+
+Press `?` inside the TUI for the full guide, including WebSocket event names.
+
 ## Helpful Task Commands
 
 If you use `task`:
